@@ -1,4 +1,3 @@
-```jsx
 import {
   createContext,
   useContext,
@@ -507,4 +506,3 @@ export function useKaraoke() {
 
   return useContext(KaraokeContext)
 }
-```
