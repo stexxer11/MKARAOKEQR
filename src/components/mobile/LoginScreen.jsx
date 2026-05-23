@@ -34,13 +34,13 @@ function LoginScreen({
           "
         >
 
-          <span className="metal-m">
-            M
-          </span>
+        <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
+    M
+  </span>
 
-          <span className="metal-karaoke">
-            KARAOKE
-          </span>
+  <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
+    KARAOKE
+  </span>
 
         </div>
 
