@@ -601,3 +601,298 @@
     softFloat 5s ease-in-out infinite;
 }
 
+/* =========================================
+   LOADING SCREEN
+========================================= */
+
+.loading-screen {
+  animation: fadeInScreen 0.6s ease;
+}
+
+/* =========================================
+   LOGO
+========================================= */
+
+.loading-logo {
+
+  font-size: clamp(3rem, 12vw, 6rem);
+
+  font-weight: 900;
+
+  letter-spacing: 0.22em;
+
+  line-height: 1;
+
+  animation:
+    logoPulse 2.2s infinite ease-in-out;
+
+  text-shadow:
+    0 0 15px rgba(34,211,238,0.25),
+    0 0 40px rgba(59,130,246,0.2),
+    0 0 70px rgba(168,85,247,0.15);
+}
+
+/* =========================================
+   TEXT
+========================================= */
+
+.loading-text {
+
+  margin-top: 1.2rem;
+
+  color: rgba(255,255,255,0.72);
+
+  letter-spacing: 0.14em;
+
+  font-size: clamp(0.85rem, 3vw, 1rem);
+
+  animation: textFade 1.8s infinite ease-in-out;
+}
+
+/* =========================================
+   LOADING BAR
+========================================= */
+
+.loading-bar {
+
+  width: min(240px, 70vw);
+
+  height: 6px;
+
+  margin: 2rem auto 0;
+
+  background: rgba(255,255,255,0.08);
+
+  border-radius: 999px;
+
+  overflow: hidden;
+
+  position: relative;
+}
+
+.loading-progress {
+
+  position: absolute;
+
+  inset: 0;
+
+  width: 40%;
+
+  border-radius: inherit;
+
+  background: linear-gradient(
+    90deg,
+    #22d3ee,
+    #3b82f6,
+    #a855f7
+  );
+
+  animation: loadingMove 1.2s infinite ease-in-out;
+}
+
+/* =========================================
+   GLOWS
+========================================= */
+
+.loading-glow {
+
+  position: absolute;
+
+  width: 420px;
+  height: 420px;
+
+  border-radius: 999px;
+
+  filter: blur(120px);
+
+  opacity: 0.12;
+
+  animation: glowFloat 7s infinite ease-in-out;
+}
+
+.glow1 {
+  background: #22d3ee;
+  top: -120px;
+  left: -120px;
+}
+
+.glow2 {
+  background: #3b82f6;
+  bottom: -150px;
+  right: -100px;
+}
+
+.glow3 {
+  background: #a855f7;
+  top: 50%;
+  left: 50%;
+
+  transform: translate(-50%, -50%);
+}
+
+/* =========================================
+   SPOTLIGHTS
+========================================= */
+
+.spotlight {
+
+  position: absolute;
+
+  width: 40vw;
+  height: 120vh;
+
+  filter: blur(45px);
+
+  opacity: 0.12;
+
+  animation: spotlightMove 5s infinite alternate ease-in-out;
+}
+
+.spotlight-left {
+
+  left: -10%;
+  top: -30%;
+
+  background: linear-gradient(
+    to bottom,
+    rgba(34,211,238,0.8),
+    transparent
+  );
+
+  transform: rotate(15deg);
+}
+
+.spotlight-right {
+
+  right: -10%;
+  top: -20%;
+
+  background: linear-gradient(
+    to bottom,
+    rgba(168,85,247,0.8),
+    transparent
+  );
+
+  transform: rotate(-15deg);
+
+  animation-delay: 1s;
+}
+
+/* =========================================
+   ANIMATIONS
+========================================= */
+
+@keyframes loadingMove {
+
+  0% {
+    transform: translateX(-130%);
+  }
+
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+@keyframes logoPulse {
+
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+
+  50% {
+    transform: scale(1.03);
+    filter: brightness(1.25);
+  }
+
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+@keyframes textFade {
+
+  0% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.4;
+  }
+}
+
+@keyframes glowFloat {
+
+  0% {
+    transform: scale(1) translateY(0px);
+  }
+
+  50% {
+    transform: scale(1.08) translateY(-20px);
+  }
+
+  100% {
+    transform: scale(1) translateY(0px);
+  }
+}
+
+@keyframes spotlightMove {
+
+  0% {
+    opacity: 0.08;
+  }
+
+  100% {
+    opacity: 0.16;
+  }
+}
+
+@keyframes fadeInScreen {
+
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 640px) {
+
+  .loading-logo {
+
+    font-size: clamp(2.8rem, 16vw, 5rem);
+
+    letter-spacing: 0.12em;
+  }
+
+  .loading-text {
+
+    margin-top: 1rem;
+
+    font-size: 0.9rem;
+  }
+
+  .loading-glow {
+
+    width: 260px;
+    height: 260px;
+
+    filter: blur(90px);
+  }
+
+  .spotlight {
+
+    width: 70vw;
+  }
+}

@@ -3,7 +3,6 @@ import { useKaraoke } from "../context/KaraokeContext"
 import useSongSearch from "../hooks/useSongSearch"
 import useQueueModal from "../hooks/useQueueModal"
 import useStageAnimation from "../hooks/useStageAnimation"
-
 import LoadingScreen from "../components/mobile/LoadingScreen"
 import LoginScreen from "../components/mobile/LoginScreen"
 import SearchBar from "../components/mobile/SearchBar"

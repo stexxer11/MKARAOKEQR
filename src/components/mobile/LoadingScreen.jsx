@@ -2,22 +2,46 @@ function LoadingScreen() {
 
   return (
 
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white">
+    <div className="loading-screen min-h-screen bg-black flex items-center justify-center overflow-hidden text-white relative">
 
-      <h1 className="text-5xl font-black tracking-widest">
+      {/* BACKGROUND GLOW */}
+      <div className="absolute inset-0 overflow-hidden">
 
-        <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
-          M
-        </span>
+        <div className="loading-glow glow1" />
+        <div className="loading-glow glow2" />
+        <div className="loading-glow glow3" />
 
-        <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
-          KARAOKE
-        </span>
+        <div className="spotlight spotlight-left" />
+        <div className="spotlight spotlight-right" />
 
-      </h1>
+      </div>
 
-      <div className="mt-8">
-        <div className="w-14 h-14 border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin" />
+      {/* CONTENT */}
+      <div className="relative z-10 text-center px-6">
+
+        <h1 className="loading-logo">
+
+          <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
+            M
+          </span>
+
+          <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
+            KARAOKE
+          </span>
+
+        </h1>
+
+        <p className="loading-text">
+          Preparando escenario...
+        </p>
+
+        {/* LOADER */}
+        <div className="loading-bar">
+
+          <div className="loading-progress" />
+
+        </div>
+
       </div>
 
     </div>
