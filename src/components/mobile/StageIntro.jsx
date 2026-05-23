@@ -2,11 +2,24 @@ function StageIntro() {
 
   return (
 
-    <div className="fixed inset-0 bg-black flex items-center justify-center text-white">
+    <div className="stage-intro fixed inset-0 overflow-hidden bg-black flex items-center justify-center text-white">
 
-      <div className="text-center">
+      {/* LUCES */}
+      <div className="absolute inset-0">
 
-        <h1 className="text-6xl font-black tracking-widest">
+        <div className="spotlight spotlight-left" />
+        <div className="spotlight spotlight-right" />
+        <div className="spotlight spotlight-center" />
+
+        <div className="stage-smoke smoke1" />
+        <div className="stage-smoke smoke2" />
+
+      </div>
+
+      {/* CONTENIDO */}
+      <div className="relative z-10 text-center px-6 intro-content">
+
+        <div className="stage-logo">
 
           <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
             M
@@ -16,9 +29,9 @@ function StageIntro() {
             KARAOKE
           </span>
 
-        </h1>
+        </div>
 
-        <p className="text-zinc-400 mt-4">
+        <p className="stage-text">
           Entrando al escenario...
         </p>
 
