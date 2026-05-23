@@ -6,6 +6,7 @@
 
   * {
     @apply m-0 p-0 box-border;
+
     font-family:
       system-ui,
       -apple-system,
@@ -34,11 +35,12 @@
   }
 }
 
-/* =========================
-   BASE ANIMATIONS
-========================= */
+/* =========================================
+   BASE
+========================================= */
 
 @keyframes fadeIn {
+
   from {
     opacity: 0;
   }
@@ -48,24 +50,9 @@
   }
 }
 
-@keyframes softFloat {
-
-  0% {
-    transform: translateY(0px);
-  }
-
-  50% {
-    transform: translateY(-6px);
-  }
-
-  100% {
-    transform: translateY(0px);
-  }
-}
-
-/* =========================
+/* =========================================
    METAL FLOW
-========================= */
+========================================= */
 
 @keyframes paintFlowUltra {
 
@@ -84,40 +71,9 @@
   }
 }
 
-/* =========================
-   LOGO REVEAL
-========================= */
-
-@keyframes logoReveal {
-
-  0% {
-    opacity: 0;
-    transform:
-      translateY(24px)
-      scale(.96);
-
-    filter: blur(10px);
-  }
-
-  100% {
-    opacity: 1;
-    transform:
-      translateY(0)
-      scale(1);
-
-    filter: blur(0px);
-  }
-}
-
-.animate-logoReveal {
-  animation:
-    logoReveal .7s cubic-bezier(0.22,1,0.36,1)
-    forwards;
-}
-
-/* =========================
-   SOFT GLOW
-========================= */
+/* =========================================
+   GLOW
+========================================= */
 
 @keyframes glowPulse {
 
@@ -137,18 +93,14 @@
   }
 }
 
-.animate-glow {
-  animation:
-    glowPulse 5s ease-in-out infinite;
-}
-
-/* =========================
+/* =========================================
    METAL TEXT
-========================= */
+========================================= */
 
 .metal-m {
 
   display: inline-block;
+
   font-weight: 900;
 
   background:
@@ -180,6 +132,7 @@
 .metal-karaoke {
 
   display: inline-block;
+
   font-weight: 900;
 
   background:
@@ -208,13 +161,14 @@
     );
 }
 
-/* =========================
-   SWEETALERT
-========================= */
+/* =========================================
+   SWEET ALERT
+========================================= */
 
 .swal2-popup.karaoke-swal {
 
   position: relative;
+
   overflow: hidden;
 
   width: 92%;
@@ -247,6 +201,7 @@
   content: "";
 
   position: absolute;
+
   inset: 0;
 
   background:
@@ -346,9 +301,9 @@
   border: none !important;
 }
 
-/* =========================
+/* =========================================
    CHECK GLOW
-========================= */
+========================================= */
 
 .karaoke-check {
 
@@ -379,9 +334,9 @@
     glowPulse 2.4s ease-in-out infinite;
 }
 
-/* =========================
+/* =========================================
    SWEET ALERT ENTRY
-========================= */
+========================================= */
 
 .swal2-show {
   animation:
@@ -431,9 +386,9 @@
   }
 }
 
-/* =========================
+/* =========================================
    FLOATING LIGHTS
-========================= */
+========================================= */
 
 .fish {
 
@@ -525,88 +480,43 @@
   }
 }
 
-/* =========================
-   CURTAINS
-========================= */
-
-.curtain-left,
-.curtain-right {
-
-  position: absolute;
-
-  top: 0;
-
-  width: 50%;
-  height: 100%;
-
-  background:
-    linear-gradient(
-      to bottom,
-      #000,
-      #050505
-    );
-
-  z-index: 50;
-}
-
-.curtain-left {
-
-  left: 0;
-
-  animation:
-    openLeft 1s ease forwards;
-}
-
-.curtain-right {
-
-  right: 0;
-
-  animation:
-    openRight 1s ease forwards;
-}
-
-@keyframes openLeft {
-
-  0% {
-    transform: translateX(0);
-  }
-
-  100% {
-    transform: translateX(-100%);
-  }
-}
-
-@keyframes openRight {
-
-  0% {
-    transform: translateX(0);
-  }
-
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-/* =========================
-   HELPERS
-========================= */
-
-.animate-stageEnter {
-  animation:
-    fadeIn .5s ease-out;
-}
-
-.animate-float {
-  animation:
-    softFloat 5s ease-in-out infinite;
-}
-
 /* =========================================
    LOADING SCREEN
 ========================================= */
 
+@keyframes appEnter {
+
+  0% {
+
+    opacity: 0;
+
+    transform:
+      scale(.985)
+      translateY(10px);
+
+    filter: blur(8px);
+  }
+
+  60% {
+    opacity: 1;
+  }
+
+  100% {
+
+    opacity: 1;
+
+    transform:
+      scale(1)
+      translateY(0);
+
+    filter: blur(0px);
+  }
+}
+
 .loading-screen {
-  animation: fadeInScreen 0.6s ease;
+
+  animation:
+    appEnter .7s cubic-bezier(0.22,1,0.36,1);
 }
 
 /* =========================================
@@ -849,17 +759,6 @@
 
   100% {
     opacity: 0.16;
-  }
-}
-
-@keyframes fadeInScreen {
-
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
   }
 }
 
