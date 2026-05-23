@@ -6,7 +6,6 @@ import useStageAnimation from "../hooks/useStageAnimation"
 
 import LoadingScreen from "../components/mobile/LoadingScreen"
 import LoginScreen from "../components/mobile/LoginScreen"
-import StageIntro from "../components/mobile/StageIntro"
 import SearchBar from "../components/mobile/SearchBar"
 import SongResults from "../components/mobile/SongResults"
 import QueueList from "../components/mobile/QueueList"
@@ -75,13 +74,6 @@ function MobilePage() {
     return <LoadingScreen />
   }
 
-  // =========================
-  // STAGE INTRO
-  // =========================
-
-  if (enteringStage) {
-    return <StageIntro />
-  }
 
   // =========================
   // LOGIN
