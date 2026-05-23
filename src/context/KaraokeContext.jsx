@@ -1,7 +1,9 @@
+```jsx
 import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react"
 
@@ -11,6 +13,10 @@ import { loginWithGoogle } from "../services/auth"
 const KaraokeContext = createContext()
 
 export function KaraokeProvider({ children }) {
+
+  // =========================
+  // STATE
+  // =========================
 
   const [session, setSession] = useState(null)
 
@@ -23,163 +29,185 @@ export function KaraokeProvider({ children }) {
   const [authLoading, setAuthLoading] = useState(true)
 
   // =========================
-  // CURRENT SONG
+  // MEMO
   // =========================
 
-  const currentSong = queue?.[0] || null
+  const currentSong = useMemo(() => {
+    return queue?.[0] || null
+  }, [queue])
 
   // =========================
-  // INIT AUTH
+  // INIT
   // =========================
 
   useEffect(() => {
-    init()
+
+    initAuth()
+
+    setupRealtime()
+
   }, [])
 
-  async function init() {
+  // =========================
+  // AUTH INIT
+  // =========================
 
-    const { data } =
-      await supabase.auth.getSession()
+  async function initAuth() {
 
-    const session = data.session
+    try {
 
-    setSession(session)
+      const { data } =
+        await supabase.auth.getSession()
 
-    setUser(session?.user || null)
+      const currentSession =
+        data?.session || null
 
-    if (session?.user) {
+      setSession(currentSession)
 
-      await ensureProfile(session.user)
+      setUser(currentSession?.user || null)
 
-      await loadQueue()
-    }
+      if (currentSession?.user) {
 
-    setAuthLoading(false)
+        await Promise.all([
+          ensureProfile(currentSession.user),
+          loadQueue(),
+        ])
+      }
 
-    const { data: listener } =
-      supabase.auth.onAuthStateChange(
-        async (_event, session) => {
+    } catch (error) {
 
-          setSession(session)
-
-          setUser(session?.user || null)
-
-          if (session?.user) {
-
-            await ensureProfile(session.user)
-
-            await loadQueue()
-
-          } else {
-
-            setProfile(null)
-
-            setQueue([])
-          }
-        }
+      console.error(
+        "initAuth error:",
+        error
       )
 
-    return () =>
-      listener?.subscription?.unsubscribe()
+    } finally {
+
+      setAuthLoading(false)
+    }
+
+    supabase.auth.onAuthStateChange(
+      async (_event, newSession) => {
+
+        setSession(newSession)
+
+        setUser(newSession?.user || null)
+
+        if (newSession?.user) {
+
+          await Promise.all([
+            ensureProfile(newSession.user),
+            loadQueue(),
+          ])
+
+        } else {
+
+          clearState()
+        }
+      }
+    )
   }
 
   // =========================
-  // UPDATE SONG
+  // CLEAR STATE
   // =========================
 
-  async function updateSong(id, updates) {
+  function clearState() {
 
-    if (!session) return false
+    setSession(null)
 
-    const { error } = await supabase
-      .from("songs_queue")
-      .update(updates)
-      .eq("id", id)
-      .eq("user_id", session.user.id)
+    setUser(null)
+
+    setProfile(null)
+
+    setQueue([])
+  }
+
+  // =========================
+  // PROFILE
+  // =========================
+
+  async function ensureProfile(userData) {
+
+    const { data, error } =
+      await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userData.id)
+        .maybeSingle()
 
     if (error) {
 
       console.error(
-        "updateSong error:",
+        "ensureProfile fetch error:",
         error
       )
 
-      return false
+      return null
     }
-
-    return true
-  }
-
-  // =========================
-  // AUTO CREATE PROFILE
-  // =========================
-
-  async function ensureProfile(user) {
-
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .maybeSingle()
 
     if (data) {
 
       setProfile(data)
 
-      return
+      return data
     }
 
     const newProfile = {
 
-      id: user.id,
+      id: userData.id,
 
       artist_name:
-        user.user_metadata?.full_name ||
-        user.user_metadata?.name ||
+        userData.user_metadata?.full_name ||
+        userData.user_metadata?.name ||
         "Artista sin nombre",
 
-      email: user.email,
+      email: userData.email,
 
       avatar:
-        user.user_metadata?.avatar_url || null,
+        userData.user_metadata?.avatar_url || null,
 
       updated_at:
         new Date().toISOString(),
     }
 
-    const { error } = await supabase
-      .from("profiles")
-      .insert(newProfile)
+    const { error: insertError } =
+      await supabase
+        .from("profiles")
+        .insert(newProfile)
 
-    if (error) {
+    if (insertError) {
 
       console.error(
-        "ensureProfile error:",
-        error
+        "ensureProfile insert error:",
+        insertError
       )
 
-      return
+      return null
     }
 
     setProfile(newProfile)
+
+    return newProfile
   }
 
   // =========================
-  // EDIT ARTIST NAME
+  // UPDATE ARTIST NAME
   // =========================
 
   async function setArtistName(name) {
 
-    if (!session) return false
+    if (!session?.user) return false
 
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        artist_name: name,
-        updated_at:
-          new Date().toISOString(),
-      })
-      .eq("id", session.user.id)
+    const { error } =
+      await supabase
+        .from("profiles")
+        .update({
+          artist_name: name,
+          updated_at:
+            new Date().toISOString(),
+        })
+        .eq("id", session.user.id)
 
     if (error) {
 
@@ -191,7 +219,10 @@ export function KaraokeProvider({ children }) {
       return false
     }
 
-    await ensureProfile(session.user)
+    setProfile(prev => ({
+      ...prev,
+      artist_name: name,
+    }))
 
     return true
   }
@@ -229,54 +260,37 @@ export function KaraokeProvider({ children }) {
 
   async function addSong(song) {
 
-    if (!session) return false
-
-    // =========================
-    // CHECK IF FIRST SONG
-    // =========================
-
-    const { data: existingSongs } =
-      await supabase
-        .from("songs_queue")
-        .select("id")
-        .order("created_at", {
-          ascending: true,
-        })
+    if (!session?.user) return false
 
     const isFirstSong =
-      !existingSongs ||
-      existingSongs.length === 0
+      queue.length === 0
 
-    // =========================
-    // INSERT SONG
-    // =========================
+    const payload = {
 
-    const { error } = await supabase
-      .from("songs_queue")
-      .insert({
+      user_id: session.user.id,
 
-        user_id: session.user.id,
+      youtube_id: song.youtubeId,
 
-        youtube_id: song.youtubeId,
+      title: song.title,
 
-        title: song.title,
+      thumbnail: song.thumbnail,
 
-        thumbnail: song.thumbnail,
+      artist_name:
+        profile?.artist_name ||
+        "Artista",
 
-        artist_name:
-          profile?.artist_name,
+      avatar:
+        profile?.avatar || null,
 
-        avatar:
-          profile?.avatar || null,
+      status: isFirstSong
+        ? "playing"
+        : "pending",
+    }
 
-        // =========================
-        // TV REALTIME STATUS
-        // =========================
-
-        status: isFirstSong
-          ? "playing"
-          : "pending",
-      })
+    const { error } =
+      await supabase
+        .from("songs_queue")
+        .insert(payload)
 
     if (error) {
 
@@ -292,29 +306,93 @@ export function KaraokeProvider({ children }) {
   }
 
   // =========================
-  // LOGOUT
+  // UPDATE SONG
   // =========================
 
-  async function logout() {
+  async function updateSong(
+    id,
+    updates
+  ) {
 
-    await supabase.auth.signOut()
+    if (!session?.user) return false
 
-    setSession(null)
+    const { error } =
+      await supabase
+        .from("songs_queue")
+        .update(updates)
+        .eq("id", id)
+        .eq("user_id", session.user.id)
 
-    setUser(null)
+    if (error) {
 
-    setQueue([])
+      console.error(
+        "updateSong error:",
+        error
+      )
 
-    setProfile(null)
+      return false
+    }
 
     return true
   }
 
   // =========================
-  // REALTIME QUEUE
+  // DELETE SONG
   // =========================
 
-  useEffect(() => {
+  async function deleteSong(id) {
+
+    if (!session?.user) return false
+
+    const { error } =
+      await supabase
+        .from("songs_queue")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", session.user.id)
+
+    if (error) {
+
+      console.error(
+        "deleteSong error:",
+        error
+      )
+
+      return false
+    }
+
+    return true
+  }
+
+  // =========================
+  // LOGOUT
+  // =========================
+
+  async function logout() {
+
+    const { error } =
+      await supabase.auth.signOut()
+
+    if (error) {
+
+      console.error(
+        "logout error:",
+        error
+      )
+
+      return false
+    }
+
+    clearState()
+
+    return true
+  }
+
+  // =========================
+  // REALTIME
+  // =========================
+
+  function setupRealtime() {
 
     const channel = supabase
 
@@ -340,47 +418,41 @@ export function KaraokeProvider({ children }) {
 
             let updated = [...prev]
 
-            // =========================
             // INSERT
-            // =========================
-
             if (eventType === "INSERT") {
 
-              updated.push(newRow)
+              const exists =
+                updated.some(
+                  s => s.id === newRow.id
+                )
+
+              if (!exists) {
+                updated.push(newRow)
+              }
             }
 
-            // =========================
-            // DELETE
-            // =========================
+            // UPDATE
+            if (eventType === "UPDATE") {
 
+              updated = updated.map(song =>
+
+                song.id === newRow.id
+                  ? newRow
+                  : song
+              )
+            }
+
+            // DELETE
             if (eventType === "DELETE") {
 
               updated = updated.filter(
-                s => s.id !== oldRow.id
+                song =>
+                  song.id !== oldRow.id
               )
             }
-
-            // =========================
-            // UPDATE
-            // =========================
-
-            if (eventType === "UPDATE") {
-
-              updated = updated.map(s =>
-
-                s.id === newRow.id
-                  ? newRow
-                  : s
-              )
-            }
-
-            // =========================
-            // SORT
-            // =========================
 
             return updated.sort(
               (a, b) =>
-
                 new Date(a.created_at) -
                 new Date(b.created_at)
             )
@@ -391,63 +463,40 @@ export function KaraokeProvider({ children }) {
       .subscribe()
 
     return () => {
-
       supabase.removeChannel(channel)
     }
-
-  }, [])
+  }
 
   // =========================
-  // DELETE SONG
+  // PROVIDER
   // =========================
 
-  async function deleteSong(id) {
+  const value = {
 
-    if (!session) return false
+    session,
+    user,
 
-    const { error } = await supabase
-      .from("songs_queue")
-      .delete()
-      .eq("id", id)
-      .eq("user_id", session.user.id)
+    queue,
+    currentSong,
 
-    if (error) {
+    profile,
 
-      console.error(
-        "deleteSong error:",
-        error
-      )
+    authLoading,
 
-      return false
-    }
+    loginWithGoogle,
+    logout,
 
-    return true
+    addSong,
+    updateSong,
+    deleteSong,
+
+    setArtistName,
   }
 
   return (
 
     <KaraokeContext.Provider
-      value={{
-
-        session,
-        user,
-
-        queue,
-        currentSong,
-
-        profile,
-
-        loginWithGoogle,
-        logout,
-
-        addSong,
-        updateSong,
-        deleteSong,
-
-        setArtistName,
-
-        authLoading,
-      }}
+      value={value}
     >
       {children}
     </KaraokeContext.Provider>
@@ -458,3 +507,4 @@ export function useKaraoke() {
 
   return useContext(KaraokeContext)
 }
+```
