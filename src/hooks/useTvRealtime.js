@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useEffect } from "react"
 import supabase from "../services/supabase"
 
 function useTvRealtime({
@@ -7,52 +7,8 @@ function useTvRealtime({
   setShowIntro,
   setLoadingSong,
 }) {
-  const introTimeoutRef = useRef(null)
-  const songTimeoutRef = useRef(null)
 
   useEffect(() => {
-    const clearTimers = () => {
-      clearTimeout(introTimeoutRef.current)
-      clearTimeout(songTimeoutRef.current)
-    }
-
-    const handlePending = (row) => {
-      setQueue((prev) => {
-        const exists = prev.some((s) => s.id === row.id)
-
-        if (exists) {
-          return prev.map((s) =>
-            s.id === row.id ? row : s
-          )
-        }
-
-        return [...prev, row].sort(
-          (a, b) =>
-            new Date(a.created_at) -
-            new Date(b.created_at)
-        )
-      })
-    }
-
-    const handlePlaying = (row) => {
-      clearTimers()
-
-      setLoadingSong(true)
-      setShowIntro(true)
-
-      setQueue((prev) =>
-        prev.filter((s) => s.id !== row.id)
-      )
-
-      songTimeoutRef.current = setTimeout(() => {
-        setCurrentSong(row)
-      }, 600)
-
-      introTimeoutRef.current = setTimeout(() => {
-        setShowIntro(false)
-        setLoadingSong(false)
-      }, 3500)
-    }
 
     const channel = supabase
       .channel("tv-live")
@@ -63,37 +19,83 @@ function useTvRealtime({
           schema: "public",
           table: "songs_queue",
         },
-        ({ eventType, new: newRow, old: oldRow }) => {
+        (payload) => {
+
+          const {
+            eventType,
+            new: newRow,
+            old: oldRow,
+          } = payload
+
           if (eventType === "DELETE") {
-            setQueue((prev) =>
-              prev.filter((s) => s.id !== oldRow.id)
+
+            setQueue(prev =>
+              prev.filter(s => s.id !== oldRow.id)
             )
 
-            setCurrentSong((prev) =>
-              prev?.id === oldRow.id ? null : prev
+            setCurrentSong(prev =>
+              prev?.id === oldRow.id
+                ? null
+                : prev
             )
 
             return
           }
 
-          if (!newRow) return
+          const row = newRow
 
-          if (newRow.status === "playing") {
-            handlePlaying(newRow)
+          if (!row) return
+
+          if (row.status === "playing") {
+
+            setLoadingSong(true)
+            setShowIntro(false)
+            setCurrentSong(row)
+
+            setQueue(prev =>
+              prev.filter(s => s.id !== row.id)
+            )
+
             return
           }
 
-          if (newRow.status === "pending") {
-            handlePending(newRow)
+          if (row.status === "pending") {
+
+            setQueue(prev => {
+
+              const exists =
+                prev.some(s => s.id === row.id)
+
+              if (exists) {
+
+                return prev
+                  .map(s =>
+                    s.id === row.id
+                      ? row
+                      : s
+                  )
+                  .sort(
+                    (a, b) =>
+                      new Date(a.created_at) -
+                      new Date(b.created_at)
+                  )
+              }
+
+              return [...prev, row].sort(
+                (a, b) =>
+                  new Date(a.created_at) -
+                  new Date(b.created_at)
+              )
+            })
           }
         }
       )
       .subscribe()
 
     return () => {
-      clearTimers()
       supabase.removeChannel(channel)
     }
+
   }, [
     setQueue,
     setCurrentSong,

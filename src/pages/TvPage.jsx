@@ -3,10 +3,10 @@ import supabase from "../services/supabase"
 
 import TvPlayer from "../components/tv/TvPlayer"
 import TvIntro from "../components/tv/TvIntro"
-import TvLoading from "../components/tv/TvLoading"
 import TvOverlay from "../components/tv/TvOverlay"
 import TvIdle from "../components/tv/TvIdle"
 import TvBackground from "../components/tv/TvBackground"
+import TvDjLoader from "../components/tv/TvDjLoader"
 
 import useTvRealtime from "../hooks/useTvRealtime"
 import useTvQueue from "../hooks/useTvQueue"
@@ -20,11 +20,18 @@ function TvPage() {
   const [showIntro, setShowIntro] = useState(false)
   const [qrUrl, setQrUrl] = useState("")
 
+  // =====================
+  // QR URL
+  // =====================
+
   useEffect(() => {
     setQrUrl(window.location.origin)
   }, [])
 
+  // =====================
   // INITIAL LOAD
+  // =====================
+
   useEffect(() => {
 
     async function load() {
@@ -43,14 +50,19 @@ function TvPage() {
 
       setQueue(pending || [])
 
-      if (playing) setCurrentSong(playing)
+      if (playing) {
+        setCurrentSong(playing)
+      }
     }
 
     load()
 
   }, [])
 
+  // =====================
   // REALTIME
+  // =====================
+
   useTvRealtime({
     setQueue,
     setCurrentSong,
@@ -58,22 +70,34 @@ function TvPage() {
     setLoadingSong,
   })
 
+  // =====================
   // AUTO NEXT
+  // =====================
+
   useTvQueue({
     queue,
     currentSong,
     setCurrentSong,
   })
 
+  // =====================
   // PLAYER CONTROL
+  // =====================
+
   const {
     handleReady,
     handleStateChange,
     handleError,
   } = useTvPlayer({
+    currentSong,
     setLoadingSong,
     setCurrentSong,
+    setShowIntro,
   })
+
+  // =====================
+  // SCREEN STATES
+  // =====================
 
   const idle = !currentSong
 
@@ -84,7 +108,7 @@ function TvPage() {
       {/* BACKGROUND */}
       <TvBackground idle={idle} />
 
-      {/* PLAYER */}
+      {/* PLAYER OCULTO / VISIBLE */}
       <TvPlayer
         currentSong={currentSong}
         onReady={handleReady}
@@ -92,23 +116,29 @@ function TvPage() {
         onError={handleError}
       />
 
-      {/* LOADING */}
-      {loadingSong && <TvLoading />}
-
-      {/* INTRO */}
-      {showIntro && (
-        <TvIntro currentSong={currentSong} />
+      {/* LOADER DJ MIENTRAS YOUTUBE CARGA */}
+      {loadingSong && currentSong && (
+        <TvDjLoader
+          currentSong={currentSong}
+        />
       )}
 
-      {/* OVERLAY */}
-      {!showIntro && currentSong && (
+      {/* INTRO CUANDO YA ESTÁ LISTA LA CANCIÓN */}
+      {showIntro && currentSong && (
+        <TvIntro
+          currentSong={currentSong}
+        />
+      )}
+
+      {/* OVERLAY DE CANCIÓN */}
+      {!loadingSong && !showIntro && currentSong && (
         <TvOverlay
           currentSong={currentSong}
           qrUrl={qrUrl}
         />
       )}
 
-      {/* IDLE */}
+      {/* PANTALLA IDLE */}
       {idle && (
         <TvIdle
           qrUrl={qrUrl}

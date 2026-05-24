@@ -1,67 +1,78 @@
-import { useRef, useCallback } from "react"
+import { useRef } from "react"
+import supabase from "../services/supabase"
 
-function useTvPlayer({ setLoadingSong, setCurrentSong }) {
+function useTvPlayer({
+  currentSong,
+  setLoadingSong,
+  setCurrentSong,
+  setShowIntro,
+}) {
+
   const playerRef = useRef(null)
-  const timeoutRef = useRef(null)
 
-  const safePlay = useCallback(() => {
-    const player = playerRef.current
+  const handleReady = (e) => {
 
-    if (!player) return
+    playerRef.current = e.target
 
     try {
-      player.unMute()
-      player.setVolume(100)
-      player.playVideo()
-    } catch (error) {
-      console.error("Player error:", error)
-    }
-  }, [])
+      e.target.unMute()
+      e.target.setVolume(100)
+      e.target.playVideo()
+    } catch (err) {}
 
-  const handleReady = useCallback(
-    ({ target }) => {
-      playerRef.current = target
+    setLoadingSong(false)
+    setShowIntro(true)
 
-      safePlay()
+    setTimeout(() => {
+      setShowIntro(false)
+    }, 2800)
+  }
+
+  const handleStateChange = async (e) => {
+
+    if (e.data === 0) {
+
+      if (!currentSong?.id) return
+
+      await supabase
+        .from("songs_queue")
+        .delete()
+        .eq("id", currentSong.id)
+
+      setCurrentSong(null)
+      setShowIntro(false)
       setLoadingSong(false)
-    },
-    [safePlay, setLoadingSong]
-  )
+    }
 
-  const handleStateChange = useCallback(
-    async ({ data }) => {
-      switch (data) {
-        // ended
-        case 0:
-          try {
-            await fetch("/api/next")
-          } catch (error) {
-            console.error("Next song error:", error)
-          }
+    if (e.data === 1) {
+      try {
+        playerRef.current?.unMute()
+        playerRef.current?.setVolume(100)
+      } catch (err) {}
+    }
 
-          setCurrentSong(null)
-          break
+    if (e.data === 2) {
+      setTimeout(() => {
+        try {
+          playerRef.current?.playVideo()
+        } catch (err) {}
+      }, 250)
+    }
+  }
 
-        // paused
-        case 2:
-          clearTimeout(timeoutRef.current)
+  const handleError = async () => {
 
-          timeoutRef.current = setTimeout(() => {
-            safePlay()
-          }, 200)
+    if (currentSong?.id) {
+      await supabase
+        .from("songs_queue")
+        .delete()
+        .eq("id", currentSong.id)
+    }
 
-          break
-
-        default:
-          break
-      }
-    },
-    [safePlay, setCurrentSong]
-  )
-
-  const handleError = useCallback(() => {
     setCurrentSong(null)
-  }, [setCurrentSong])
+    setShowIntro(false)
+    setLoadingSong(false)
+  }
 
   return {
     playerRef,
