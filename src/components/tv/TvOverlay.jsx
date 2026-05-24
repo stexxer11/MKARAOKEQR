@@ -67,11 +67,7 @@ function TvOverlay({
           absolute bottom-8 right-8
           transition-all duration-700
 
-          ${
-            visible
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-8"
-          }
+          
         `}
       >
         <TvQr qrUrl={qrUrl} />
