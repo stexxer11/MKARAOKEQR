@@ -64,6 +64,7 @@ export function KaraokeProvider({ children }) {
       }
 
       await loadQueue()
+
     } catch (error) {
       console.error("initAuth error:", error)
     } finally {
@@ -206,6 +207,7 @@ export function KaraokeProvider({ children }) {
 
     if (!activeSession?.user) {
       console.error("addSong error: no active session")
+      await loadQueue()
       return false
     }
 
@@ -236,6 +238,7 @@ export function KaraokeProvider({ children }) {
 
     if (queueError) {
       console.error("addSong load queue error:", queueError)
+      await loadQueue()
       return false
     }
 
@@ -272,17 +275,23 @@ export function KaraokeProvider({ children }) {
       created_at: new Date().toISOString(),
     }
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("songs_queue")
       .insert(payload)
+      .select()
+
+    await loadQueue()
 
     if (error) {
       console.error("addSong error:", error)
-      await loadQueue()
       return false
     }
 
-    await loadQueue()
+    if (!data || data.length === 0) {
+      console.warn("addSong warning: no row inserted")
+      return false
+    }
+
     return true
   }
 
@@ -292,19 +301,7 @@ export function KaraokeProvider({ children }) {
 
     const activeSession = sessionData?.session || session
 
-    if (!activeSession?.user) return false
-
-    const song = queueRef.current.find(
-      item => item.id === id
-    )
-
-    if (!song) {
-      await loadQueue()
-      return false
-    }
-
-    if (song.status === "playing") {
-      console.warn("No se puede editar una canción que ya está sonando")
+    if (!activeSession?.user) {
       await loadQueue()
       return false
     }
@@ -315,20 +312,26 @@ export function KaraokeProvider({ children }) {
       thumbnail: updates.thumbnail,
     }
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("songs_queue")
       .update(cleanUpdates)
       .eq("id", id)
       .eq("user_id", activeSession.user.id)
       .neq("status", "playing")
+      .select()
+
+    await loadQueue()
 
     if (error) {
       console.error("updateSong error:", error)
-      await loadQueue()
       return false
     }
 
-    await loadQueue()
+    if (!data || data.length === 0) {
+      console.warn("updateSong warning: no row updated")
+      return false
+    }
+
     return true
   }
 
@@ -338,37 +341,31 @@ export function KaraokeProvider({ children }) {
 
     const activeSession = sessionData?.session || session
 
-    if (!activeSession?.user) return false
-
-    const song = queueRef.current.find(
-      item => item.id === id
-    )
-
-    if (!song) {
+    if (!activeSession?.user) {
       await loadQueue()
       return false
     }
 
-    if (song.status === "playing") {
-      console.warn("No se puede eliminar una canción que ya está sonando")
-      await loadQueue()
-      return false
-    }
-
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("songs_queue")
       .delete()
       .eq("id", id)
       .eq("user_id", activeSession.user.id)
       .neq("status", "playing")
+      .select()
+
+    await loadQueue()
 
     if (error) {
       console.error("deleteSong error:", error)
-      await loadQueue()
       return false
     }
 
-    await loadQueue()
+    if (!data || data.length === 0) {
+      console.warn("deleteSong warning: no row deleted")
+      return false
+    }
+
     return true
   }
 
@@ -394,52 +391,10 @@ export function KaraokeProvider({ children }) {
           schema: "public",
           table: "songs_queue",
         },
-        payload => {
+        async payload => {
           console.log("REALTIME SONGS_QUEUE:", payload)
 
-          const eventType = payload.eventType
-          const newRow = payload.new
-          const oldRow = payload.old
-
-          setQueue(prev => {
-            let updated = [...prev]
-
-            if (eventType === "INSERT") {
-              const shouldShow =
-                newRow.status === "playing" ||
-                newRow.status === "pending"
-
-              updated = updated.filter(
-                song => song.id !== newRow.id
-              )
-
-              if (shouldShow) {
-                updated.push(newRow)
-              }
-            }
-
-            if (eventType === "UPDATE") {
-              const shouldShow =
-                newRow.status === "playing" ||
-                newRow.status === "pending"
-
-              updated = updated.filter(
-                song => song.id !== newRow.id
-              )
-
-              if (shouldShow) {
-                updated.push(newRow)
-              }
-            }
-
-            if (eventType === "DELETE") {
-              updated = updated.filter(
-                song => song.id !== oldRow.id
-              )
-            }
-
-            return sortQueue(updated)
-          })
+          await loadQueue()
         }
       )
       .subscribe(status => {
