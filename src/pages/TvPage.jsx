@@ -13,13 +13,10 @@ import useTvQueue from "../hooks/useTvQueue"
 import useTvPlayer from "../hooks/useTvPlayer"
 
 function TvPage() {
-
   const [queue, setQueue] = useState([])
   const [currentSong, setCurrentSong] = useState(null)
-
   const [loadingSong, setLoadingSong] = useState(false)
   const [showIntro, setShowIntro] = useState(false)
-
   const [qrUrl, setQrUrl] = useState("")
 
   useEffect(() => {
@@ -27,9 +24,7 @@ function TvPage() {
   }, [])
 
   useEffect(() => {
-
     async function load() {
-
       const { data: playing } = await supabase
         .from("songs_queue")
         .select("*")
@@ -52,7 +47,6 @@ function TvPage() {
     }
 
     load()
-
   }, [])
 
   useTvRealtime({
@@ -81,13 +75,8 @@ function TvPage() {
   })
 
   return (
-
     <div className="w-screen h-screen bg-black overflow-hidden relative">
 
-      {/* BACKGROUND */}
-      <TvBackground idle={!currentSong} />
-
-      {/* PLAYER */}
       <TvPlayer
         currentSong={currentSong}
         onReady={handleReady}
@@ -95,17 +84,12 @@ function TvPage() {
         onError={handleError}
       />
 
-      {/* LOADING */}
-      {loadingSong && (
-        <TvLoading />
-      )}
+      {loadingSong && <TvLoading />}
 
-      {/* INTRO */}
       {showIntro && currentSong && (
         <TvIntro currentSong={currentSong} />
       )}
 
-      {/* OVERLAY */}
       {!loadingSong && !showIntro && currentSong && (
         <TvOverlay
           currentSong={currentSong}
@@ -113,7 +97,6 @@ function TvPage() {
         />
       )}
 
-      {/* IDLE */}
       {!currentSong && !loadingSong && (
         <TvIdle
           qrUrl={qrUrl}
