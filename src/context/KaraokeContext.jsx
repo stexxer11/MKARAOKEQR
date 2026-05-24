@@ -64,7 +64,6 @@ export function KaraokeProvider({ children }) {
       }
 
       await loadQueue()
-
     } catch (error) {
       console.error("initAuth error:", error)
     } finally {
@@ -271,7 +270,6 @@ export function KaraokeProvider({ children }) {
         null,
       status: hasPlaying ? "pending" : "playing",
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
     }
 
     const { error } = await supabase
@@ -315,7 +313,6 @@ export function KaraokeProvider({ children }) {
       youtube_id: updates.youtube_id,
       title: updates.title,
       thumbnail: updates.thumbnail,
-      updated_at: new Date().toISOString(),
     }
 
     const { error } = await supabase
@@ -397,7 +394,7 @@ export function KaraokeProvider({ children }) {
           schema: "public",
           table: "songs_queue",
         },
-        async payload => {
+        payload => {
           console.log("REALTIME SONGS_QUEUE:", payload)
 
           const eventType = payload.eventType
