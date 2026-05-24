@@ -112,12 +112,11 @@ function useSongSearch({
 
         return
       }
-
-      await addSong({
-        youtubeId: song.id,
-        title: song.title,
-        thumbnail: song.thumbnail,
-      })
+await addSong({
+  youtube_id: song.id,
+  title: song.title,
+  thumbnail: song.thumbnail,
+})
 
       setResults([])
       setQuery("")

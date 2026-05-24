@@ -64,6 +64,7 @@ export function KaraokeProvider({ children }) {
       }
 
       await loadQueue()
+
     } catch (error) {
       console.error("initAuth error:", error)
     } finally {
@@ -191,10 +192,11 @@ export function KaraokeProvider({ children }) {
 
     if (error) {
       console.error("loadQueue error:", error)
-      return
+      return false
     }
 
     setQueue(sortQueue(data || []))
+    return true
   }
 
   async function addSong(song) {
@@ -231,9 +233,7 @@ export function KaraokeProvider({ children }) {
         .from("songs_queue")
         .select("*")
         .in("status", ["playing", "pending"])
-        .order("created_at", {
-          ascending: true,
-        })
+        .order("created_at", { ascending: true })
 
     if (queueError) {
       console.error("addSong load queue error:", queueError)
@@ -248,6 +248,7 @@ export function KaraokeProvider({ children }) {
 
     if (userAlreadyInQueue) {
       console.warn("User already has a song in queue")
+      await loadQueue()
       return false
     }
 
@@ -257,7 +258,7 @@ export function KaraokeProvider({ children }) {
 
     const payload = {
       user_id: userId,
-      youtube_id: song.youtubeId,
+      youtube_id: song.youtube_id,
       title: song.title,
       thumbnail: song.thumbnail,
       artist_name:
@@ -273,25 +274,17 @@ export function KaraokeProvider({ children }) {
       updated_at: new Date().toISOString(),
     }
 
-    const { data: inserted, error } = await supabase
+    const { error } = await supabase
       .from("songs_queue")
       .insert(payload)
-      .select()
-      .single()
 
     if (error) {
       console.error("addSong error:", error)
+      await loadQueue()
       return false
     }
 
-    setQueue(prev => {
-      const cleaned = prev.filter(
-        item => item.id !== inserted.id
-      )
-
-      return sortQueue([...cleaned, inserted])
-    })
-
+    await loadQueue()
     return true
   }
 
@@ -307,24 +300,38 @@ export function KaraokeProvider({ children }) {
       item => item.id === id
     )
 
-    if (!song) return false
-    if (song.status === "playing") return false
+    if (!song) {
+      await loadQueue()
+      return false
+    }
+
+    if (song.status === "playing") {
+      console.warn("No se puede editar una canción que ya está sonando")
+      await loadQueue()
+      return false
+    }
+
+    const cleanUpdates = {
+      youtube_id: updates.youtube_id,
+      title: updates.title,
+      thumbnail: updates.thumbnail,
+      updated_at: new Date().toISOString(),
+    }
 
     const { error } = await supabase
       .from("songs_queue")
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString(),
-      })
+      .update(cleanUpdates)
       .eq("id", id)
       .eq("user_id", activeSession.user.id)
       .neq("status", "playing")
 
     if (error) {
       console.error("updateSong error:", error)
+      await loadQueue()
       return false
     }
 
+    await loadQueue()
     return true
   }
 
@@ -340,8 +347,16 @@ export function KaraokeProvider({ children }) {
       item => item.id === id
     )
 
-    if (!song) return false
-    if (song.status === "playing") return false
+    if (!song) {
+      await loadQueue()
+      return false
+    }
+
+    if (song.status === "playing") {
+      console.warn("No se puede eliminar una canción que ya está sonando")
+      await loadQueue()
+      return false
+    }
 
     const { error } = await supabase
       .from("songs_queue")
@@ -352,9 +367,11 @@ export function KaraokeProvider({ children }) {
 
     if (error) {
       console.error("deleteSong error:", error)
+      await loadQueue()
       return false
     }
 
+    await loadQueue()
     return true
   }
 
@@ -380,7 +397,7 @@ export function KaraokeProvider({ children }) {
           schema: "public",
           table: "songs_queue",
         },
-        payload => {
+        async payload => {
           console.log("REALTIME SONGS_QUEUE:", payload)
 
           const eventType = payload.eventType
@@ -395,15 +412,13 @@ export function KaraokeProvider({ children }) {
                 newRow.status === "playing" ||
                 newRow.status === "pending"
 
-              if (!shouldShow) {
-                return sortQueue(updated)
-              }
-
               updated = updated.filter(
                 song => song.id !== newRow.id
               )
 
-              updated.push(newRow)
+              if (shouldShow) {
+                updated.push(newRow)
+              }
             }
 
             if (eventType === "UPDATE") {
