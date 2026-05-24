@@ -26,15 +26,11 @@ export function KaraokeProvider({ children }) {
   }, [queue])
 
   const currentSong = useMemo(() => {
-    return (
-      queue.find(song => song.status === "playing") ||
-      null
-    )
+    return queue.find(song => song.status === "playing") || null
   }, [queue])
 
   useEffect(() => {
     let authSubscription = null
-    let mounted = true
 
     async function start() {
       authSubscription = await initAuth()
@@ -45,8 +41,6 @@ export function KaraokeProvider({ children }) {
     const cleanupRealtime = setupRealtime()
 
     return () => {
-      mounted = false
-
       if (authSubscription) {
         authSubscription.unsubscribe()
       }
@@ -160,7 +154,12 @@ export function KaraokeProvider({ children }) {
   }
 
   async function setArtistName(name) {
-    if (!session?.user) return false
+    const { data: sessionData } =
+      await supabase.auth.getSession()
+
+    const activeSession = sessionData?.session || session
+
+    if (!activeSession?.user) return false
 
     const { error } = await supabase
       .from("profiles")
@@ -168,7 +167,7 @@ export function KaraokeProvider({ children }) {
         artist_name: name,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", session.user.id)
+      .eq("id", activeSession.user.id)
 
     if (error) {
       console.error("setArtistName error:", error)
@@ -199,105 +198,165 @@ export function KaraokeProvider({ children }) {
   }
 
   async function addSong(song) {
-  const { data: sessionData } =
-    await supabase.auth.getSession()
+    const { data: sessionData } =
+      await supabase.auth.getSession()
 
-  const activeSession =
-    sessionData?.session || session
+    const activeSession = sessionData?.session || session
 
-  if (!activeSession?.user) {
-    console.error("addSong error: no active session")
-    return false
-  }
-
-  const userId = activeSession.user.id
-
-  let activeProfile = profile
-
-  if (!activeProfile) {
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .maybeSingle()
-
-    activeProfile = profileData || null
-
-    if (profileData) {
-      setProfile(profileData)
+    if (!activeSession?.user) {
+      console.error("addSong error: no active session")
+      return false
     }
-  }
 
-  const { data: currentQueue, error: queueError } =
-    await supabase
-      .from("songs_queue")
-      .select("*")
-      .in("status", ["playing", "pending"])
-      .order("created_at", {
-        ascending: true,
-      })
+    const userId = activeSession.user.id
 
-  if (queueError) {
-    console.error("addSong load queue error:", queueError)
-    return false
-  }
+    let activeProfile = profile
 
-  const safeQueue = currentQueue || []
+    if (!activeProfile) {
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle()
 
-  const userAlreadyInQueue = safeQueue.some(
-    item => item.user_id === userId
-  )
+      activeProfile = profileData || null
 
-  if (userAlreadyInQueue) {
-    console.warn("User already has a song in queue")
-    return false
-  }
+      if (profileData) {
+        setProfile(profileData)
+      }
+    }
 
-  const hasPlaying = safeQueue.some(
-    item => item.status === "playing"
-  )
+    const { data: currentQueue, error: queueError } =
+      await supabase
+        .from("songs_queue")
+        .select("*")
+        .in("status", ["playing", "pending"])
+        .order("created_at", {
+          ascending: true,
+        })
 
-  const payload = {
-    user_id: userId,
-    youtube_id: song.youtubeId,
-    title: song.title,
-    thumbnail: song.thumbnail,
-    artist_name:
-      activeProfile?.artist_name ||
-      activeSession.user.user_metadata?.full_name ||
-      "Artista",
-    avatar:
-      activeProfile?.avatar ||
-      activeSession.user.user_metadata?.avatar_url ||
-      null,
-    status: hasPlaying ? "pending" : "playing",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  }
+    if (queueError) {
+      console.error("addSong load queue error:", queueError)
+      return false
+    }
 
-  const { data: inserted, error } = await supabase
-    .from("songs_queue")
-    .insert(payload)
-    .select()
-    .single()
+    const safeQueue = currentQueue || []
 
-  if (error) {
-    console.error("addSong error:", error)
-    return false
-  }
-
-  setQueue(prev => {
-    const exists = prev.some(
-      item => item.id === inserted.id
+    const userAlreadyInQueue = safeQueue.some(
+      item => item.user_id === userId
     )
 
-    if (exists) return prev
+    if (userAlreadyInQueue) {
+      console.warn("User already has a song in queue")
+      return false
+    }
 
-    return sortQueue([...prev, inserted])
-  })
+    const hasPlaying = safeQueue.some(
+      item => item.status === "playing"
+    )
 
-  return true
-}
+    const payload = {
+      user_id: userId,
+      youtube_id: song.youtubeId,
+      title: song.title,
+      thumbnail: song.thumbnail,
+      artist_name:
+        activeProfile?.artist_name ||
+        activeSession.user.user_metadata?.full_name ||
+        "Artista",
+      avatar:
+        activeProfile?.avatar ||
+        activeSession.user.user_metadata?.avatar_url ||
+        null,
+      status: hasPlaying ? "pending" : "playing",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+
+    const { data: inserted, error } = await supabase
+      .from("songs_queue")
+      .insert(payload)
+      .select()
+      .single()
+
+    if (error) {
+      console.error("addSong error:", error)
+      return false
+    }
+
+    setQueue(prev => {
+      const cleaned = prev.filter(
+        item => item.id !== inserted.id
+      )
+
+      return sortQueue([...cleaned, inserted])
+    })
+
+    return true
+  }
+
+  async function updateSong(id, updates) {
+    const { data: sessionData } =
+      await supabase.auth.getSession()
+
+    const activeSession = sessionData?.session || session
+
+    if (!activeSession?.user) return false
+
+    const song = queueRef.current.find(
+      item => item.id === id
+    )
+
+    if (!song) return false
+    if (song.status === "playing") return false
+
+    const { error } = await supabase
+      .from("songs_queue")
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .eq("user_id", activeSession.user.id)
+      .neq("status", "playing")
+
+    if (error) {
+      console.error("updateSong error:", error)
+      return false
+    }
+
+    return true
+  }
+
+  async function deleteSong(id) {
+    const { data: sessionData } =
+      await supabase.auth.getSession()
+
+    const activeSession = sessionData?.session || session
+
+    if (!activeSession?.user) return false
+
+    const song = queueRef.current.find(
+      item => item.id === id
+    )
+
+    if (!song) return false
+    if (song.status === "playing") return false
+
+    const { error } = await supabase
+      .from("songs_queue")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", activeSession.user.id)
+      .neq("status", "playing")
+
+    if (error) {
+      console.error("deleteSong error:", error)
+      return false
+    }
+
+    return true
+  }
 
   async function logout() {
     const { error } = await supabase.auth.signOut()
@@ -336,15 +395,15 @@ export function KaraokeProvider({ children }) {
                 newRow.status === "playing" ||
                 newRow.status === "pending"
 
-              if (!shouldShow) return sortQueue(updated)
+              if (!shouldShow) {
+                return sortQueue(updated)
+              }
 
-              const exists = updated.some(
-                song => song.id === newRow.id
+              updated = updated.filter(
+                song => song.id !== newRow.id
               )
 
-              if (!exists) {
-                updated.push(newRow)
-              }
+              updated.push(newRow)
             }
 
             if (eventType === "UPDATE") {
@@ -352,22 +411,12 @@ export function KaraokeProvider({ children }) {
                 newRow.status === "playing" ||
                 newRow.status === "pending"
 
-              if (shouldShow) {
-                const exists = updated.some(
-                  song => song.id === newRow.id
-                )
+              updated = updated.filter(
+                song => song.id !== newRow.id
+              )
 
-                if (exists) {
-                  updated = updated.map(song =>
-                    song.id === newRow.id ? newRow : song
-                  )
-                } else {
-                  updated.push(newRow)
-                }
-              } else {
-                updated = updated.filter(
-                  song => song.id !== newRow.id
-                )
+              if (shouldShow) {
+                updated.push(newRow)
               }
             }
 
