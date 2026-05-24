@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { useKaraoke } from "../context/KaraokeContext"
 
 import useSongSearch from "../hooks/useSongSearch"
@@ -26,6 +27,8 @@ function MobilePage() {
     setArtistName,
   } = useKaraoke()
 
+  const [editingSong, setEditingSong] = useState(null)
+
   // =========================
   // STAGE ANIMATION
   // =========================
@@ -50,6 +53,9 @@ function MobilePage() {
     session,
     queue,
     addSong,
+    updateSong,
+    editingSong,
+    setEditingSong,
   })
 
   // =========================
@@ -63,6 +69,7 @@ function MobilePage() {
     deleteSong,
     setArtistName,
     profile,
+    setEditingSong,
   })
 
   // =========================
@@ -73,18 +80,14 @@ function MobilePage() {
     return <LoadingScreen />
   }
 
-
   // =========================
   // LOGIN
   // =========================
 
   if (!session) {
-
     return (
-
       <LoginScreen
         loginWithGoogle={async () => {
-
           startStageEnter()
 
           try {
@@ -102,7 +105,6 @@ function MobilePage() {
   // =========================
 
   return (
-
     <div className="min-h-screen bg-black text-white relative pb-24 overflow-y-auto">
 
       {/* GLOBAL GLOW */}
@@ -131,6 +133,18 @@ function MobilePage() {
             {profile?.artist_name || "Sin nombre"}
           </span>
         </p>
+
+        {editingSong && (
+          <div className="mt-4 mx-auto w-[90%] max-w-md rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-sm text-cyan-200">
+            Editando:{" "}
+            <span className="font-bold text-white">
+              {editingSong.title}
+            </span>
+            <p className="text-xs text-zinc-400 mt-1">
+              Busca otra canción y tócala para reemplazarla.
+            </p>
+          </div>
+        )}
 
       </div>
 

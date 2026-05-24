@@ -9,6 +9,7 @@ function useQueueModal({
   deleteSong,
   setArtistName,
   profile,
+  setEditingSong,
 }) {
   const askedNameRef = useRef(false)
   const queueRef = useRef([])
@@ -198,10 +199,22 @@ function useQueueModal({
 
     if (alreadyTurn) return
 
-    if (res.isConfirmed) {
-      await startEditFlow(latestSong)
-      return
-    }
+ if (res.isConfirmed) {
+
+  setEditingSong(latestSong)
+
+  await Swal.fire({
+    title: "Modo edición activado",
+    text: "Busca una nueva canción arriba para reemplazar la actual.",
+    icon: "info",
+    timer: 1800,
+    showConfirmButton: false,
+    background: "#09090b",
+    color: "#fff",
+  })
+
+  return
+}
 
     if (res.isDenied) {
       await confirmDelete(latestSong)

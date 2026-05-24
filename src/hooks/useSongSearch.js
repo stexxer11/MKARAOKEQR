@@ -6,6 +6,9 @@ function useSongSearch({
   session,
   queue,
   addSong,
+  updateSong,
+  editingSong,
+  setEditingSong,
 }) {
   const [query, setQuery] = useState("")
   const [results, setResults] = useState([])
@@ -48,8 +51,8 @@ function useSongSearch({
       const safeData = data || []
 
       setResults(safeData)
-
       cacheRef.current[cleanQuery] = safeData
+
     } catch (e) {
       if (e.name !== "AbortError") {
         Swal.fire({
@@ -71,6 +74,29 @@ function useSongSearch({
 
     try {
       setAddingSong(true)
+
+      if (editingSong) {
+        await updateSong(editingSong.id, {
+          youtube_id: song.id,
+          title: song.title,
+          thumbnail: song.thumbnail,
+        })
+
+        await Swal.fire({
+          title: "Canción actualizada",
+          text: "Tu canción fue reemplazada",
+          icon: "success",
+          timer: 1200,
+          showConfirmButton: false,
+          background: "#09090b",
+          color: "#fff",
+        })
+
+        setEditingSong(null)
+        setResults([])
+        setQuery("")
+        return
+      }
 
       const userHasSong = queue?.some(
         s => s.user_id === session.user.id
@@ -95,6 +121,7 @@ function useSongSearch({
 
       setResults([])
       setQuery("")
+
     } finally {
       setAddingSong(false)
     }
