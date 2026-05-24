@@ -1,7 +1,5 @@
 import { useRef, useState } from "react"
-
 import Swal from "sweetalert2"
-
 import { searchYouTube } from "../services/youtubeApi"
 
 function useSongSearch({
@@ -9,7 +7,6 @@ function useSongSearch({
   queue,
   addSong,
 }) {
-
   const [query, setQuery] = useState("")
   const [results, setResults] = useState([])
   const [loadingSearch, setLoadingSearch] = useState(false)
@@ -20,16 +17,17 @@ function useSongSearch({
   const cacheRef = useRef({})
 
   async function handleSearch(value) {
-
     const q = value ?? query
 
-    if (!q || q.length < 3) {
+    if (!q || q.trim().length < 3) {
       setResults([])
       return
     }
 
-    if (cacheRef.current[q]) {
-      setResults(cacheRef.current[q])
+    const cleanQuery = q.trim()
+
+    if (cacheRef.current[cleanQuery]) {
+      setResults(cacheRef.current[cleanQuery])
       return
     }
 
@@ -38,14 +36,12 @@ function useSongSearch({
     }
 
     const controller = new AbortController()
-
     abortRef.current = controller
 
     try {
-
       setLoadingSearch(true)
 
-      const data = await searchYouTube(q, {
+      const data = await searchYouTube(cleanQuery, {
         signal: controller.signal,
       })
 
@@ -53,12 +49,9 @@ function useSongSearch({
 
       setResults(safeData)
 
-      cacheRef.current[q] = safeData
-
+      cacheRef.current[cleanQuery] = safeData
     } catch (e) {
-
       if (e.name !== "AbortError") {
-
         Swal.fire({
           title: "Error",
           text: "No se pudo buscar",
@@ -67,33 +60,26 @@ function useSongSearch({
           color: "#fff",
         })
       }
-
     } finally {
-
       setLoadingSearch(false)
     }
   }
 
   async function handleAdd(song) {
-
     if (!session) return
-
     if (addingSong) return
 
     try {
-
       setAddingSong(true)
 
-      const exists = queue?.some(
-        s =>
-          s.youtube_id === song.id &&
-          s.user_id === session.user.id
+      const userHasSong = queue?.some(
+        s => s.user_id === session.user.id
       )
 
-      if (exists) {
-
+      if (userHasSong) {
         await Swal.fire({
-          title: "Ya tienes esta canción",
+          title: "Ya estás en la cola",
+          text: "Puedes editar o salir desde tu turno.",
           background: "#09090b",
           color: "#fff",
         })
@@ -107,14 +93,14 @@ function useSongSearch({
         thumbnail: song.thumbnail,
       })
 
+      setResults([])
+      setQuery("")
     } finally {
-
       setAddingSong(false)
     }
   }
 
   function handleTyping(value) {
-
     setQuery(value)
 
     clearTimeout(searchTimeout.current)
@@ -125,16 +111,11 @@ function useSongSearch({
   }
 
   return {
-
     query,
     setQuery: handleTyping,
-
     results,
-
     loadingSearch,
-
     handleSearch,
-
     handleAdd,
   }
 }
