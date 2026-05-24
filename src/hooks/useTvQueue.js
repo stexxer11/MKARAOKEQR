@@ -5,22 +5,26 @@ function useTvQueue({
   queue,
   currentSong,
   setCurrentSong,
+  setLoadingSong,
 }) {
   const processingRef = useRef(false)
 
   useEffect(() => {
-    const playNextSong = async () => {
+
+    async function playNextSong() {
       if (processingRef.current) return
       if (currentSong) return
       if (!queue?.length) return
 
       const next = queue[0]
 
-      if (!next) return
+      if (!next?.id) return
 
       processingRef.current = true
 
       try {
+        setLoadingSong(true)
+
         const { error } = await supabase
           .from("songs_queue")
           .update({ status: "playing" })
@@ -28,16 +32,24 @@ function useTvQueue({
 
         if (error) throw error
 
-        setCurrentSong(next)
+        setCurrentSong(prev => prev || next)
+
       } catch (error) {
         console.error("Queue error:", error)
+        setLoadingSong(false)
       } finally {
         processingRef.current = false
       }
     }
 
     playNextSong()
-  }, [queue, currentSong, setCurrentSong])
+
+  }, [
+    queue,
+    currentSong,
+    setCurrentSong,
+    setLoadingSong,
+  ])
 
   return {
     processingRef,

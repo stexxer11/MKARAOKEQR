@@ -29,15 +29,15 @@ function useTvRealtime({
 
           if (eventType === "DELETE") {
 
-            setQueue(prev =>
-              prev.filter(s => s.id !== oldRow.id)
-            )
+            if (oldRow?.id) {
+              setQueue(prev =>
+                prev.filter(s => s.id !== oldRow.id)
+              )
 
-            setCurrentSong(prev =>
-              prev?.id === oldRow.id
-                ? null
-                : prev
-            )
+              setCurrentSong(prev =>
+                prev?.id === oldRow.id ? null : prev
+              )
+            }
 
             return
           }
@@ -49,12 +49,16 @@ function useTvRealtime({
           if (row.status === "playing") {
 
             setLoadingSong(true)
-            setShowIntro(false)
+            setShowIntro(true)
             setCurrentSong(row)
 
             setQueue(prev =>
               prev.filter(s => s.id !== row.id)
             )
+
+            setTimeout(() => {
+              setShowIntro(false)
+            }, 4500)
 
             return
           }
@@ -63,17 +67,11 @@ function useTvRealtime({
 
             setQueue(prev => {
 
-              const exists =
-                prev.some(s => s.id === row.id)
+              const exists = prev.some(s => s.id === row.id)
 
               if (exists) {
-
                 return prev
-                  .map(s =>
-                    s.id === row.id
-                      ? row
-                      : s
-                  )
+                  .map(s => s.id === row.id ? row : s)
                   .sort(
                     (a, b) =>
                       new Date(a.created_at) -
@@ -87,6 +85,10 @@ function useTvRealtime({
                   new Date(b.created_at)
               )
             })
+
+            setCurrentSong(prev =>
+              prev?.id === row.id ? null : prev
+            )
           }
         }
       )

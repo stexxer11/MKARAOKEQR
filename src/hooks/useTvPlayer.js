@@ -1,9 +1,14 @@
 import { useRef } from "react"
+import supabase from "../services/supabase"
 
-function useTvPlayer({ setLoadingSong, setCurrentSong }) {
+function useTvPlayer({
+  currentSong,
+  setLoadingSong,
+  setCurrentSong,
+}) {
   const playerRef = useRef(null)
 
-  const safePlay = () => {
+  function safePlay() {
     try {
       playerRef.current?.unMute()
       playerRef.current?.setVolume(100)
@@ -11,36 +16,45 @@ function useTvPlayer({ setLoadingSong, setCurrentSong }) {
     } catch {}
   }
 
-  const handleReady = ({ target }) => {
+  function handleReady({ target }) {
     playerRef.current = target
     safePlay()
     setLoadingSong(false)
   }
 
-  const handleStateChange = async ({ data }) => {
+  async function handleStateChange({ data }) {
     switch (data) {
-      // ended
+
+      // ENDED
       case 0:
-        try {
-          await fetch("/api/next")
-        } catch {}
+        if (currentSong?.id) {
+          await supabase
+            .from("songs_queue")
+            .delete()
+            .eq("id", currentSong.id)
+        }
 
         setCurrentSong(null)
         break
 
-      // playing
+      // PLAYING
       case 1:
         safePlay()
+        setLoadingSong(false)
         break
 
-      // paused
+      // PAUSED
       case 2:
         setTimeout(safePlay, 200)
+        break
+
+      default:
         break
     }
   }
 
-  const handleError = () => {
+  function handleError() {
+    setLoadingSong(false)
     setCurrentSong(null)
   }
 
