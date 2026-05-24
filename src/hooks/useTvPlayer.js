@@ -7,62 +7,95 @@ function useTvPlayer({
   setLoadingSong,
   setShowIntro,
 }) {
+
   const playerRef = useRef(null)
+
   const introTimerRef = useRef(null)
+
   const hasStartedRef = useRef(false)
 
+  // =========================
+  // PLAY
+  // =========================
+
   function safePlay() {
+
     try {
+
       playerRef.current?.mute()
+
       playerRef.current?.playVideo()
 
-      setTimeout(() => {
-        playerRef.current?.playVideo()
-      }, 500)
-
-      setTimeout(() => {
-        playerRef.current?.playVideo()
-      }, 1200)
     } catch {}
   }
+
+  // =========================
+  // SOUND
+  // =========================
 
   function enableSound() {
+
     try {
+
       playerRef.current?.unMute()
+
       playerRef.current?.setVolume(100)
-      playerRef.current?.playVideo()
+
     } catch {}
   }
 
+  // =========================
+  // INTRO
+  // =========================
+
   function showIntroAfterStart() {
+
     clearTimeout(introTimerRef.current)
 
     setShowIntro(true)
 
     introTimerRef.current = setTimeout(() => {
+
       setShowIntro(false)
-    }, 3500)
+
+    }, 2500)
   }
 
+  // =========================
+  // READY
+  // =========================
+
   function handleReady({ target }) {
+
     playerRef.current = target
+
     hasStartedRef.current = false
 
     setLoadingSong(true)
-    safePlay()
 
-    setTimeout(() => {
-      enableSound()
-    }, 1800)
+    safePlay()
   }
 
+  // =========================
+  // STATE CHANGE
+  // =========================
+
   async function handleStateChange({ data }) {
+
     switch (data) {
+
+      // =====================
+      // ENDED
+      // =====================
+
       case 0:
+
         clearTimeout(introTimerRef.current)
+
         hasStartedRef.current = false
 
         if (currentSong?.id) {
+
           await supabase
             .from("songs_queue")
             .delete()
@@ -70,37 +103,67 @@ function useTvPlayer({
         }
 
         setLoadingSong(false)
+
         setShowIntro(false)
+
         setCurrentSong(null)
+
         break
+
+      // =====================
+      // PLAYING
+      // =====================
 
       case 1:
-        if (!hasStartedRef.current) {
-          hasStartedRef.current = true
-          setLoadingSong(false)
-          showIntroAfterStart()
 
-          setTimeout(() => {
-            enableSound()
-          }, 1000)
+        // YA ESTA REPRODUCIENDO
+        // QUITAR LOADING INMEDIATAMENTE
+
+        if (!hasStartedRef.current) {
+
+          hasStartedRef.current = true
+
+          setLoadingSong(false)
+
+          enableSound()
+
+          showIntroAfterStart()
         }
+
         break
+
+      // =====================
+      // PAUSED
+      // =====================
 
       case 2:
-        setLoadingSong(true)
 
         setTimeout(() => {
+
           safePlay()
+
         }, 300)
 
-        setTimeout(() => {
-          enableSound()
-        }, 1600)
         break
 
-      case 5:
+      // =====================
+      // BUFFERING
+      // =====================
+
+      case 3:
+
         setLoadingSong(true)
+
+        break
+
+      // =====================
+      // CUED
+      // =====================
+
+      case 5:
+
         safePlay()
+
         break
 
       default:
@@ -108,12 +171,20 @@ function useTvPlayer({
     }
   }
 
+  // =========================
+  // ERROR
+  // =========================
+
   function handleError() {
+
     clearTimeout(introTimerRef.current)
+
     hasStartedRef.current = false
 
     setLoadingSong(false)
+
     setShowIntro(false)
+
     setCurrentSong(null)
   }
 
