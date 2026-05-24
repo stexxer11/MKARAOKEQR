@@ -6,11 +6,10 @@ function useTvRealtime({
   setCurrentSong,
   setLoadingSong,
   setShowIntro,
-  setTvStage,
 }) {
   useEffect(() => {
     const channel = supabase
-      .channel("tv-realtime")
+      .channel("tv-live")
       .on(
         "postgres_changes",
         {
@@ -18,30 +17,57 @@ function useTvRealtime({
           schema: "public",
           table: "songs_queue",
         },
-        payload => {
-          const row = payload.new
+        (payload) => {
+          const { eventType, new: newRow, old: oldRow } = payload
 
+          if (eventType === "DELETE") {
+            setQueue(prev =>
+              prev.filter(song => song.id !== oldRow?.id)
+            )
+
+            setCurrentSong(prev =>
+              prev?.id === oldRow?.id ? null : prev
+            )
+
+            setLoadingSong(false)
+            setShowIntro(false)
+            return
+          }
+
+          const row = newRow
           if (!row) return
+
+        if (row.status === "playing") {
+
+  // evitar resetear la canción
+  setCurrentSong(prev => prev || row)
+
+  // sacar de cola
+  setQueue(prev =>
+    prev.filter(song => song.id !== row.id)
+  )
+
+  // NO activar loading aquí
+  // porque vuelve a mostrar
+  // "Cargando canción..."
+
+  return
+}
 
           if (row.status === "pending") {
             setQueue(prev => {
               const exists = prev.some(song => song.id === row.id)
 
-              if (exists) return prev
+              const nextQueue = exists
+                ? prev.map(song => song.id === row.id ? row : song)
+                : [...prev, row]
 
-              return [...prev, row]
+              return nextQueue.sort(
+                (a, b) =>
+                  new Date(a.created_at) -
+                  new Date(b.created_at)
+              )
             })
-          }
-
-          if (row.status === "playing") {
-            setTvStage("loading")
-            setLoadingSong(true)
-            setShowIntro(false)
-            setCurrentSong(prev => prev || row)
-
-            setQueue(prev =>
-              prev.filter(song => song.id !== row.id)
-            )
           }
         }
       )
@@ -55,7 +81,6 @@ function useTvRealtime({
     setCurrentSong,
     setLoadingSong,
     setShowIntro,
-    setTvStage,
   ])
 }
 
