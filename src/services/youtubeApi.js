@@ -20,6 +20,11 @@ export async function searchYouTube(query) {
       return []
     }
 
+    if (!API_KEY) {
+      console.error("Missing VITE_YOUTUBE_API_KEY")
+      return []
+    }
+
     // =========================================
     // CLEAN QUERY
     // =========================================
@@ -42,7 +47,7 @@ export async function searchYouTube(query) {
       `${cleanQuery} karaoke version`
 
     // =========================================
-    // BUILD URL (OPTIMIZED)
+    // BUILD URL
     // =========================================
     const url =
       "https://www.googleapis.com/youtube/v3/search" +
@@ -67,12 +72,14 @@ export async function searchYouTube(query) {
     clearTimeout(timeout)
 
     if (!response.ok) {
+      console.error("YouTube API error:", response.status)
       return []
     }
 
     const data = await response.json()
 
     if (data?.error || !Array.isArray(data.items)) {
+      console.error("YouTube API response error:", data?.error)
       return []
     }
 
@@ -81,8 +88,8 @@ export async function searchYouTube(query) {
     // =========================================
     const songs = data.items
       .filter(item => {
-
-        const title = item?.snippet?.title?.toLowerCase()
+        const title =
+          item?.snippet?.title?.toLowerCase() || ""
 
         return (
           item?.id?.videoId &&
@@ -95,29 +102,38 @@ export async function searchYouTube(query) {
           !title.includes("cover reaction")
         )
       })
-      .map(item => ({
+      .map(item => {
 
-        id: item.id.videoId,
-        youtubeId: item.id.videoId,
+        const videoId = item.id.videoId
 
-        title:
-          item.snippet.title
-            ?.replaceAll("&amp;", "&")
-            ?.replaceAll("&#39;", "'")
-            ?.trim()
-            ?.slice(0, 120) || "Untitled",
+        return {
+          id: videoId,
 
-        artist:
-          item.snippet.channelTitle
-            ?.trim()
-            ?.slice(0, 80) || "Unknown",
+          youtubeId: videoId,
+          youtube_id: videoId,
 
-        thumbnail:
-          item.snippet.thumbnails?.high?.url ||
-          item.snippet.thumbnails?.medium?.url ||
-          item.snippet.thumbnails?.default?.url ||
-          null,
-      }))
+          title:
+            item.snippet.title
+              ?.replaceAll("&amp;", "&")
+              ?.replaceAll("&#39;", "'")
+              ?.replaceAll("&quot;", '"')
+              ?.replaceAll("&lt;", "<")
+              ?.replaceAll("&gt;", ">")
+              ?.trim()
+              ?.slice(0, 120) || "Untitled",
+
+          artist:
+            item.snippet.channelTitle
+              ?.trim()
+              ?.slice(0, 80) || "Unknown",
+
+          thumbnail:
+            item.snippet.thumbnails?.high?.url ||
+            item.snippet.thumbnails?.medium?.url ||
+            item.snippet.thumbnails?.default?.url ||
+            null,
+        }
+      })
 
     // =========================================
     // REMOVE DUPLICATES
@@ -132,9 +148,11 @@ export async function searchYouTube(query) {
   } catch (err) {
 
     if (err.name === "AbortError") {
+      console.warn("YouTube search aborted")
       return []
     }
 
+    console.error("YouTube search failed:", err)
     return []
   }
 }
