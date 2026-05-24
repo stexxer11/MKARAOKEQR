@@ -9,14 +9,11 @@ function TvPlayer({
 }) {
 
   const playerRef = useRef(null)
-
-  const opts = useMemo(
+const opts = useMemo(
     () => ({
       width: "100%",
       height: "100%",
-
       host: "https://www.youtube-nocookie.com",
-
       playerVars: {
         autoplay: 1,
         controls: 0,
