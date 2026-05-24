@@ -199,96 +199,105 @@ export function KaraokeProvider({ children }) {
   }
 
   async function addSong(song) {
-    if (!session?.user) return false
+  const { data: sessionData } =
+    await supabase.auth.getSession()
 
-    const currentQueue = queueRef.current || []
+  const activeSession =
+    sessionData?.session || session
 
-    const userAlreadyInQueue = currentQueue.some(
-      item => item.user_id === session.user.id
-    )
-
-    if (userAlreadyInQueue) return false
-
-    const hasPlaying = currentQueue.some(
-      item => item.status === "playing"
-    )
-
-    const payload = {
-      user_id: session.user.id,
-      youtube_id: song.youtubeId,
-      title: song.title,
-      thumbnail: song.thumbnail,
-      artist_name: profile?.artist_name || "Artista",
-      avatar: profile?.avatar || null,
-      status: hasPlaying ? "pending" : "playing",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }
-
-    const { error } = await supabase
-      .from("songs_queue")
-      .insert(payload)
-
-    if (error) {
-      console.error("addSong error:", error)
-      return false
-    }
-
-    return true
+  if (!activeSession?.user) {
+    console.error("addSong error: no active session")
+    return false
   }
 
-  async function updateSong(id, updates) {
-    if (!session?.user) return false
+  const userId = activeSession.user.id
 
-    const song = queueRef.current.find(
-      item => item.id === id
-    )
+  let activeProfile = profile
 
-    if (!song) return false
-    if (song.status === "playing") return false
+  if (!activeProfile) {
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .maybeSingle()
 
-    const { error } = await supabase
+    activeProfile = profileData || null
+
+    if (profileData) {
+      setProfile(profileData)
+    }
+  }
+
+  const { data: currentQueue, error: queueError } =
+    await supabase
       .from("songs_queue")
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString(),
+      .select("*")
+      .in("status", ["playing", "pending"])
+      .order("created_at", {
+        ascending: true,
       })
-      .eq("id", id)
-      .eq("user_id", session.user.id)
-      .neq("status", "playing")
 
-    if (error) {
-      console.error("updateSong error:", error)
-      return false
-    }
-
-    return true
+  if (queueError) {
+    console.error("addSong load queue error:", queueError)
+    return false
   }
 
-  async function deleteSong(id) {
-    if (!session?.user) return false
+  const safeQueue = currentQueue || []
 
-    const song = queueRef.current.find(
-      item => item.id === id
+  const userAlreadyInQueue = safeQueue.some(
+    item => item.user_id === userId
+  )
+
+  if (userAlreadyInQueue) {
+    console.warn("User already has a song in queue")
+    return false
+  }
+
+  const hasPlaying = safeQueue.some(
+    item => item.status === "playing"
+  )
+
+  const payload = {
+    user_id: userId,
+    youtube_id: song.youtubeId,
+    title: song.title,
+    thumbnail: song.thumbnail,
+    artist_name:
+      activeProfile?.artist_name ||
+      activeSession.user.user_metadata?.full_name ||
+      "Artista",
+    avatar:
+      activeProfile?.avatar ||
+      activeSession.user.user_metadata?.avatar_url ||
+      null,
+    status: hasPlaying ? "pending" : "playing",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }
+
+  const { data: inserted, error } = await supabase
+    .from("songs_queue")
+    .insert(payload)
+    .select()
+    .single()
+
+  if (error) {
+    console.error("addSong error:", error)
+    return false
+  }
+
+  setQueue(prev => {
+    const exists = prev.some(
+      item => item.id === inserted.id
     )
 
-    if (!song) return false
-    if (song.status === "playing") return false
+    if (exists) return prev
 
-    const { error } = await supabase
-      .from("songs_queue")
-      .delete()
-      .eq("id", id)
-      .eq("user_id", session.user.id)
-      .neq("status", "playing")
+    return sortQueue([...prev, inserted])
+  })
 
-    if (error) {
-      console.error("deleteSong error:", error)
-      return false
-    }
-
-    return true
-  }
+  return true
+}
 
   async function logout() {
     const { error } = await supabase.auth.signOut()
