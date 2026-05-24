@@ -1,35 +1,33 @@
-// src/components/tv/TvIdle.jsx
+import TvQr from "./TvQr"
 
-function TvIdle({
-  qrUrl,
-  queue,
-}) {
+function TvIdle({ qrUrl, queue }) {
 
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black text-white">
+    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black overflow-hidden">
 
-      <h1 className="text-6xl font-bold mb-6">
-        MKaraoke
-      </h1>
+      <div className="absolute w-[1200px] h-[1200px] bg-cyan-500/10 blur-[200px] rounded-full animate-pulse" />
 
-      <p className="mb-10">
-        Escanea y pide tu canción
-      </p>
+      <div className="relative z-10 text-center px-10">
 
-      <p className="text-sm mb-10">
-        {qrUrl}
-      </p>
+        <h1 className="text-8xl font-black tracking-widest">
+          <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
+            MKARAOKE
+          </span>
+        </h1>
 
-      <div className="w-[400px]">
+        <p className="mt-8 text-3xl text-white/70 font-semibold">
+          Escanea el QR y agrega tu canción
+        </p>
 
-        {queue.map(song => (
-          <div
-            key={song.id}
-            className="border-b border-white/20 py-2"
-          >
-            {song.title}
-          </div>
-        ))}
+        <div className="mt-12 flex justify-center">
+          <TvQr qrUrl={qrUrl} large />
+        </div>
+
+        <div className="mt-12 text-white/60 text-2xl">
+          {queue.length > 0
+            ? `${queue.length} canción(es) en espera`
+            : "La fila está vacía"}
+        </div>
 
       </div>
 

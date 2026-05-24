@@ -19,7 +19,7 @@ function TvPage() {
   const [qrUrl, setQrUrl] = useState("")
 
   useEffect(() => {
-    setQrUrl(window.location.origin)
+    setQrUrl("https://mkaraokeqr.vercel.app/")
   }, [])
 
   useEffect(() => {
