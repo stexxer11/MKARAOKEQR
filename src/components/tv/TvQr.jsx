@@ -11,16 +11,13 @@ function TvQr({ qrUrl, large = false }) {
     <div
       className={`
         bg-white
+        p-2
         rounded-3xl
         overflow-hidden
         shadow-2xl
 
         ${large ? "scale-125" : ""}
       `}
-      style={{
-        width: size,
-        height: size,
-      }}
     >
 
       <QRCodeCanvas
@@ -36,9 +33,10 @@ function TvQr({ qrUrl, large = false }) {
         includeMargin={false}
 
         style={{
-          width: "100%",
-          height: "100%",
+          width: size,
+          height: size,
           display: "block",
+          borderRadius: "18px",
         }}
       />
 
