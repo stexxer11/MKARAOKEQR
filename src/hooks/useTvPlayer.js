@@ -10,23 +10,12 @@ function useTvPlayer({
   const playerRef = useRef(null)
   const introTimerRef = useRef(null)
   const hasStartedRef = useRef(false)
-  const retryTimerRef = useRef(null)
 
   function safePlay() {
     try {
-      if (!playerRef.current) return
-
-      playerRef.current.mute()
-      playerRef.current.playVideo()
-
-      setTimeout(() => {
-        try {
-          playerRef.current?.unMute()
-          playerRef.current?.setVolume(100)
-          playerRef.current?.playVideo()
-        } catch {}
-      }, 600)
-
+      playerRef.current?.unMute()
+      playerRef.current?.setVolume(100)
+      playerRef.current?.playVideo()
     } catch {}
   }
 
@@ -43,20 +32,13 @@ function useTvPlayer({
   function handleReady({ target }) {
     playerRef.current = target
     hasStartedRef.current = false
-
-    clearTimeout(retryTimerRef.current)
-
-    retryTimerRef.current = setTimeout(() => {
-      safePlay()
-    }, 500)
+    safePlay()
   }
 
   async function handleStateChange({ data }) {
     switch (data) {
       case 0:
         clearTimeout(introTimerRef.current)
-        clearTimeout(retryTimerRef.current)
-
         hasStartedRef.current = false
 
         if (currentSong?.id) {
@@ -72,29 +54,18 @@ function useTvPlayer({
         break
 
       case 1:
+        safePlay()
+
         if (!hasStartedRef.current) {
           hasStartedRef.current = true
           setLoadingSong(false)
           showIntroAfterStart()
         }
+
         break
 
       case 2:
-        clearTimeout(retryTimerRef.current)
-
-        retryTimerRef.current = setTimeout(() => {
-          safePlay()
-        }, 500)
-
-        break
-
-      case 3:
-        clearTimeout(retryTimerRef.current)
-
-        retryTimerRef.current = setTimeout(() => {
-          safePlay()
-        }, 900)
-
+        setTimeout(safePlay, 200)
         break
 
       default:
@@ -104,8 +75,6 @@ function useTvPlayer({
 
   function handleError() {
     clearTimeout(introTimerRef.current)
-    clearTimeout(retryTimerRef.current)
-
     hasStartedRef.current = false
 
     setLoadingSong(false)

@@ -8,122 +8,32 @@ function TvPlayer({
 }) {
   if (!currentSong) return null
 
-  // =========================
-  // READY
-  // =========================
-
-  function handlePlayerReady(event) {
-
-    try {
-
-      // evitar autoplay block
-      event.target.mute()
-
-      setTimeout(() => {
-
-        try {
-
-          event.target.playVideo()
-
-          // fullscreen visual limpia
-          const iframe = document.querySelector("iframe")
-
-          if (iframe) {
-
-            iframe.setAttribute(
-              "allow",
-              "autoplay; fullscreen"
-            )
-
-            iframe.style.pointerEvents = "none"
-          }
-
-        }
-        catch (err) {
-          console.error("AUTOPLAY PLAY ERROR:", err)
-        }
-
-      }, 500)
-
-    }
-    catch (err) {
-      console.error("AUTOPLAY READY ERROR:", err)
-    }
-
-    // callback externo
-    if (onReady) {
-      onReady(event)
-    }
-  }
-
   return (
-    <div className="absolute inset-0 z-0 bg-black overflow-hidden">
-
-      {/* BLOQUEAR CLICKS */}
-      <div className="absolute inset-0 z-50" />
-
+    <div className="absolute inset-0 z-0 bg-black">
       <YouTube
-        key={`${currentSong.id}-${currentSong.youtube_id}`}
+        key={currentSong.id}
         videoId={currentSong.youtube_id}
-
         className="absolute inset-0 w-full h-full"
         iframeClassName="absolute inset-0 w-full h-full"
-
         opts={{
           width: "100%",
           height: "100%",
-
           playerVars: {
-
-            // =========================
-            // AUTOPLAY
-            // =========================
-
             autoplay: 1,
-
-            // =========================
-            // UI OFF
-            // =========================
-
             controls: 0,
             disablekb: 1,
             fs: 0,
-
-            // =========================
-            // YOUTUBE CLEAN
-            // =========================
-
-            rel: 0,
-            modestbranding: 1,
             iv_load_policy: 3,
-
-            // =========================
-            // MOBILE
-            // =========================
-
+            modestbranding: 1,
             playsinline: 1,
-
-            // =========================
-            // API
-            // =========================
-
-            enablejsapi: 1,
-            origin: window.location.origin,
-
-            // =========================
-            // EXTRA CLEAN
-            // =========================
-
-            showinfo: 0,
-            mute: 1,
+            rel: 0,
+            start: 0,
           },
         }}
-
-        onReady={handlePlayerReady}
+        onReady={onReady}
         onStateChange={onStateChange}
         onError={onError}
       />
-
     </div>
   )
 }
