@@ -1,53 +1,67 @@
-import { useRef } from "react"
+import { useRef, useCallback } from "react"
 
 function useTvPlayer({ setLoadingSong, setCurrentSong }) {
-
   const playerRef = useRef(null)
+  const timeoutRef = useRef(null)
 
-  const handleReady = (e) => {
+  const safePlay = useCallback(() => {
+    const player = playerRef.current
 
-    playerRef.current = e.target
+    if (!player) return
 
     try {
-      e.target.unMute()
-      e.target.setVolume(100)
-      e.target.playVideo()
-    } catch (err) {}
-
-    setLoadingSong(false)
-  }
-
-  const handleStateChange = async (e) => {
-
-    // ended
-    if (e.data === 0) {
-
-      try {
-        await fetch("/api/next") // opcional o Supabase directo
-      } catch {}
-
-      setCurrentSong(null)
+      player.unMute()
+      player.setVolume(100)
+      player.playVideo()
+    } catch (error) {
+      console.error("Player error:", error)
     }
+  }, [])
 
-    // playing
-    if (e.data === 1) {
-      try {
-        playerRef.current?.unMute()
-        playerRef.current?.setVolume(100)
-      } catch {}
-    }
+  const handleReady = useCallback(
+    ({ target }) => {
+      playerRef.current = target
 
-    // paused auto-resume
-    if (e.data === 2) {
-      setTimeout(() => {
-        playerRef.current?.playVideo()
-      }, 200)
-    }
-  }
+      safePlay()
+      setLoadingSong(false)
+    },
+    [safePlay, setLoadingSong]
+  )
 
-  const handleError = () => {
+  const handleStateChange = useCallback(
+    async ({ data }) => {
+      switch (data) {
+        // ended
+        case 0:
+          try {
+            await fetch("/api/next")
+          } catch (error) {
+            console.error("Next song error:", error)
+          }
+
+          setCurrentSong(null)
+          break
+
+        // paused
+        case 2:
+          clearTimeout(timeoutRef.current)
+
+          timeoutRef.current = setTimeout(() => {
+            safePlay()
+          }, 200)
+
+          break
+
+        default:
+          break
+      }
+    },
+    [safePlay, setCurrentSong]
+  )
+
+  const handleError = useCallback(() => {
     setCurrentSong(null)
-  }
+  }, [setCurrentSong])
 
   return {
     playerRef,
