@@ -133,7 +133,7 @@ await addSong({
 
     searchTimeout.current = setTimeout(() => {
       handleSearch(value)
-    }, 700)
+    }, 1500)
   }
 
   return {
