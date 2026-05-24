@@ -15,7 +15,6 @@ function useSongSearch({
   const [loadingSearch, setLoadingSearch] = useState(false)
   const [addingSong, setAddingSong] = useState(false)
 
-  const searchTimeout = useRef(null)
   const abortRef = useRef(null)
   const cacheRef = useRef({})
 
@@ -27,7 +26,10 @@ function useSongSearch({
       return
     }
 
-    const cleanQuery = q.trim()
+    const cleanQuery = q
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ")
 
     if (cacheRef.current[cleanQuery]) {
       setResults(cacheRef.current[cleanQuery])
@@ -53,6 +55,15 @@ function useSongSearch({
       setResults(safeData)
       cacheRef.current[cleanQuery] = safeData
 
+      if (safeData.length === 0) {
+        await Swal.fire({
+          title: "Sin resultados",
+          text: "Intenta con otro nombre de canción.",
+          background: "#09090b",
+          color: "#fff",
+        })
+      }
+
     } catch (e) {
       if (e.name !== "AbortError") {
         Swal.fire({
@@ -71,16 +82,32 @@ function useSongSearch({
   async function handleAdd(song) {
     if (!session) return
     if (addingSong) return
+    if (!song?.id) return
 
     try {
       setAddingSong(true)
 
       if (editingSong) {
-        await updateSong(editingSong.id, {
+        const ok = await updateSong(editingSong.id, {
           youtube_id: song.id,
           title: song.title,
           thumbnail: song.thumbnail,
         })
+
+        if (!ok) {
+          await Swal.fire({
+            title: "No se pudo actualizar",
+            text: "La canción ya empezó o salió de la cola.",
+            icon: "warning",
+            background: "#09090b",
+            color: "#fff",
+          })
+
+          setEditingSong(null)
+          setResults([])
+          setQuery("")
+          return
+        }
 
         await Swal.fire({
           title: "Canción actualizada",
@@ -112,11 +139,24 @@ function useSongSearch({
 
         return
       }
-await addSong({
-  youtube_id: song.id,
-  title: song.title,
-  thumbnail: song.thumbnail,
-})
+
+      const ok = await addSong({
+        youtube_id: song.id,
+        title: song.title,
+        thumbnail: song.thumbnail,
+      })
+
+      if (!ok) {
+        await Swal.fire({
+          title: "No se pudo agregar",
+          text: "Revisa si ya estás en la cola.",
+          icon: "warning",
+          background: "#09090b",
+          color: "#fff",
+        })
+
+        return
+      }
 
       setResults([])
       setQuery("")
@@ -128,12 +168,6 @@ await addSong({
 
   function handleTyping(value) {
     setQuery(value)
-
-    clearTimeout(searchTimeout.current)
-
-    searchTimeout.current = setTimeout(() => {
-      handleSearch(value)
-    }, 1500)
   }
 
   return {
