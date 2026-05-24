@@ -21,13 +21,11 @@ function TvPlayer({
         className="
           absolute inset-0
           w-full h-full
-          pointer-events-none
         "
 
         iframeClassName="
           absolute inset-0
           w-full h-full
-          pointer-events-none
         "
 
         opts={{
@@ -35,8 +33,17 @@ function TvPlayer({
           height: "100%",
 
           playerVars: {
-            autoplay: 0,
+
+            // =====================
+            // AUTOPLAY AGRESIVO
+            // =====================
+
+            autoplay: 1,
             mute: 0,
+
+            // =====================
+            // PLAYER
+            // =====================
 
             controls: 0,
             disablekb: 1,
@@ -50,18 +57,120 @@ function TvPlayer({
 
             start: 0,
 
+            // =====================
+            // BACKGROUND PLAYBACK
+            // =====================
+
             enablejsapi: 1,
 
-            origin: "https://mkaraokeqr.vercel.app",
+            origin:
+              "https://mkaraokeqr.vercel.app",
 
-            // IMPORTANTE
             widget_referrer:
               "https://mkaraokeqr.vercel.app",
+
+            // =====================
+            // MEJORAS
+            // =====================
+
+            cc_load_policy: 0,
+            showinfo: 0,
+
+            // IMPORTANTE
+            // ayuda en algunos navegadores
+            autoplay_policy:
+              "no-user-gesture-required",
           },
         }}
 
-        onReady={onReady}
-        onStateChange={onStateChange}
+        onReady={event => {
+
+          try {
+
+            const player = event.target
+
+            // =====================
+            // FORCE PLAY
+            // =====================
+
+            player.playVideo()
+
+            setTimeout(() => {
+              player.playVideo()
+            }, 300)
+
+            setTimeout(() => {
+
+              player.unMute()
+
+              player.setVolume(100)
+
+              player.playVideo()
+
+            }, 800)
+
+            setTimeout(() => {
+
+              player.unMute()
+
+              player.setVolume(100)
+
+              player.playVideo()
+
+            }, 2000)
+
+          } catch {}
+
+          onReady?.(event)
+        }}
+
+        onStateChange={event => {
+
+          try {
+
+            const player = event.target
+
+            // =====================
+            // SI SE PAUSA SOLO
+            // =====================
+
+            if (event.data === 2) {
+
+              setTimeout(() => {
+
+                try {
+
+                  player.playVideo()
+
+                  player.unMute()
+
+                  player.setVolume(100)
+
+                } catch {}
+
+              }, 300)
+            }
+
+            // =====================
+            // BUFFERING
+            // =====================
+
+            if (event.data === 3) {
+
+              setTimeout(() => {
+
+                try {
+                  player.playVideo()
+                } catch {}
+
+              }, 500)
+            }
+
+          } catch {}
+
+          onStateChange?.(event)
+        }}
+
         onError={onError}
       />
 
