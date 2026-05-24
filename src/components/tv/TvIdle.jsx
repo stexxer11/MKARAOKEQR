@@ -2,11 +2,11 @@ import TvQr from "./TvQr"
 
 function TvIdle({ qrUrl, queue }) {
   return (
-    <div className="absolute inset-0 grid place-items-center">
+    <div className="absolute inset-0 grid place-items-center overflow-hidden">
 
-      {/* LOGO ARRIBA (no afecta el centro) */}
+      {/* LOGO ARRIBA */}
       <div className="absolute top-10 text-center z-10">
-        <h1 className="text-7xl font-black text-cyan-400">
+        <h1 className="text-7xl font-black text-cyan-400 animate-tvLogo">
           MKARAOKE
         </h1>
 
@@ -15,15 +15,17 @@ function TvIdle({ qrUrl, queue }) {
         </p>
       </div>
 
-      {/* QR PERFECTAMENTE CENTRADO */}
-      <div className="z-20 flex items-center justify-center">
-        <TvQr qrUrl={qrUrl} className="w-80 h-80" />
-      </div>
+      {/* QR GRANDE CENTRO */}
+      <TvQr
+        qrUrl={qrUrl}
+        size={280}
+        className="z-20"
+      />
 
-      {/* COLA ABAJO */}
+      {/* COLA */}
       {!!queue.length && (
         <div className="absolute bottom-8 z-10">
-          <div className="px-5 py-3 rounded-2xl bg-black/40 border border-white/10">
+          <div className="px-6 py-3 rounded-2xl bg-black/40 border border-white/10 backdrop-blur-xl">
             <span className="text-white font-bold">
               {queue.length} canciones en espera
             </span>

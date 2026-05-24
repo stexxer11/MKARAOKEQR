@@ -2,26 +2,26 @@ import { QRCodeCanvas } from "qrcode.react"
 
 function TvQr({
   qrUrl,
-  size = 95,
+  size = 82,
   className = "",
 }) {
+  if (!qrUrl) return null
+
   return (
     <div className={className}>
       <div
         className="
-          bg-white/95
+          bg-white
           p-2
           rounded-2xl
-          shadow-[0_0_35px_rgba(0,0,0,0.55)]
-          border border-white/20
+          shadow-[0_0_30px_rgba(0,0,0,0.65)]
+          border border-white/30
         "
       >
-        {qrUrl && (
-          <QRCodeCanvas
-            value={qrUrl}
-            size={size}
-          />
-        )}
+        <QRCodeCanvas
+          value={qrUrl}
+          size={size}
+        />
       </div>
     </div>
   )
