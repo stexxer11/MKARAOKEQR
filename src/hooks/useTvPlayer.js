@@ -1,5 +1,3 @@
-// src/hooks/useTvPlayer.js
-
 import { useRef } from "react"
 import supabase from "../services/supabase"
 
@@ -14,7 +12,6 @@ function useTvPlayer({
 
   const introTimerRef = useRef(null)
   const retryTimerRef = useRef(null)
-  const soundTimerRef = useRef(null)
 
   const screenPhaseRef = useRef("idle")
   const endingRef = useRef(false)
@@ -22,7 +19,6 @@ function useTvPlayer({
   function clearTimers() {
     clearTimeout(introTimerRef.current)
     clearTimeout(retryTimerRef.current)
-    clearInterval(soundTimerRef.current)
   }
 
   function forcePlay() {
@@ -31,22 +27,6 @@ function useTvPlayer({
       playerRef.current?.unMute()
       playerRef.current?.setVolume(100)
     } catch {}
-  }
-
-  function forcePlayLoop() {
-    clearInterval(soundTimerRef.current)
-
-    let tries = 0
-
-    soundTimerRef.current = setInterval(() => {
-      tries++
-
-      forcePlay()
-
-      if (tries >= 8) {
-        clearInterval(soundTimerRef.current)
-      }
-    }, 600)
   }
 
   function handleReady({ target }) {
@@ -63,7 +43,6 @@ function useTvPlayer({
 
     retryTimerRef.current = setTimeout(() => {
       forcePlay()
-      forcePlayLoop()
     }, 700)
   }
 
@@ -105,12 +84,10 @@ function useTvPlayer({
 
   async function handleStateChange({ data }) {
     switch (data) {
-      // TERMINÓ
       case 0:
         await finishSong()
         break
 
-      // PLAYING
       case 1:
         if (screenPhaseRef.current === "loading") {
           screenPhaseRef.current = "intro"
@@ -120,7 +97,6 @@ function useTvPlayer({
           setTvStage("intro")
 
           forcePlay()
-          forcePlayLoop()
 
           clearTimeout(introTimerRef.current)
 
@@ -134,22 +110,13 @@ function useTvPlayer({
 
         break
 
-      // PAUSADO
       case 2:
-        if (
-          screenPhaseRef.current === "loading" ||
-          screenPhaseRef.current === "intro" ||
-          screenPhaseRef.current === "playing"
-        ) {
-          retryTimerRef.current = setTimeout(() => {
-            forcePlay()
-            forcePlayLoop()
-          }, 400)
-        }
+        retryTimerRef.current = setTimeout(() => {
+          forcePlay()
+        }, 400)
 
         break
 
-      // BUFFERING
       case 3:
         if (screenPhaseRef.current === "loading") {
           setLoadingSong(true)
@@ -162,11 +129,9 @@ function useTvPlayer({
 
         break
 
-      // CUED
       case 5:
         if (screenPhaseRef.current === "loading") {
           forcePlay()
-          forcePlayLoop()
         }
 
         break
