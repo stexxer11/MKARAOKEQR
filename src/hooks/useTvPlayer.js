@@ -7,6 +7,7 @@ function useTvPlayer({
   setLoadingSong,
   setShowIntro,
   setTvStage,
+  loadTvState,
 }) {
   const playerRef = useRef(null)
 
@@ -71,10 +72,13 @@ function useTvPlayer({
           .eq("id", finishedId)
 
         if (error) throw error
+
       } catch (error) {
         console.error("Delete finished song error:", error)
       }
     }
+
+    await loadTvState()
 
     setTimeout(() => {
       screenPhaseRef.current = "idle"
@@ -141,7 +145,7 @@ function useTvPlayer({
     }
   }
 
-  function handleError() {
+  async function handleError() {
     clearTimers()
 
     endingRef.current = false
@@ -153,6 +157,8 @@ function useTvPlayer({
     setTvStage("idle")
 
     playerRef.current = null
+
+    await loadTvState()
   }
 
   return {

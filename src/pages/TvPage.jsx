@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import supabase from "../services/supabase"
 
 import TvPlayer from "../components/tv/TvPlayer"
@@ -25,41 +25,60 @@ function TvPage() {
     setQrUrl("https://mkaraokeqr.vercel.app/")
   }, [])
 
-  useEffect(() => {
-    async function load() {
-      const { data: playing } = await supabase
+  const loadTvState = useCallback(async () => {
+    try {
+      const { data: playing, error: playingError } = await supabase
         .from("songs_queue")
         .select("*")
         .eq("status", "playing")
+        .order("created_at", { ascending: true })
+        .limit(1)
         .maybeSingle()
 
-      const { data: pending } = await supabase
+      if (playingError) throw playingError
+
+      const { data: pending, error: pendingError } = await supabase
         .from("songs_queue")
         .select("*")
         .eq("status", "pending")
         .order("created_at", { ascending: true })
 
+      if (pendingError) throw pendingError
+
       setQueue(pending || [])
 
       if (playing) {
-        setTvStage("loading")
-        setCurrentSong(playing)
+        setCurrentSong(prev => {
+          if (prev?.id === playing.id) return prev
+          return playing
+        })
+
         setLoadingSong(true)
         setShowIntro(false)
-      } else {
-        setTvStage("idle")
-      }
-    }
+        setTvStage(prev => {
+          if (prev === "intro" || prev === "playing") return prev
+          return "loading"
+        })
 
-    load()
+        return
+      }
+
+      setCurrentSong(null)
+      setLoadingSong(false)
+      setShowIntro(false)
+      setTvStage("idle")
+
+    } catch (error) {
+      console.error("loadTvState error:", error)
+    }
   }, [])
 
+  useEffect(() => {
+    loadTvState()
+  }, [loadTvState])
+
   useTvRealtime({
-    setQueue,
-    setCurrentSong,
-    setLoadingSong,
-    setShowIntro,
-    setTvStage,
+    loadTvState,
   })
 
   useTvQueue({
@@ -67,7 +86,9 @@ function TvPage() {
     currentSong,
     setCurrentSong,
     setLoadingSong,
+    setShowIntro,
     setTvStage,
+    loadTvState,
   })
 
   const {
@@ -80,6 +101,7 @@ function TvPage() {
     setLoadingSong,
     setShowIntro,
     setTvStage,
+    loadTvState,
   })
 
   return (

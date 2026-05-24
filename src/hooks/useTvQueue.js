@@ -6,44 +6,11 @@ function useTvQueue({
   currentSong,
   setCurrentSong,
   setLoadingSong,
+  setShowIntro,
   setTvStage,
+  loadTvState,
 }) {
   const processingRef = useRef(false)
-  const recoveredRef = useRef(false)
-
-  useEffect(() => {
-    async function recoverPlayingSong() {
-      if (recoveredRef.current) return
-
-      recoveredRef.current = true
-
-      try {
-        const { data, error } = await supabase
-          .from("songs_queue")
-          .select("*")
-          .eq("status", "playing")
-          .order("created_at", { ascending: true })
-          .limit(1)
-          .maybeSingle()
-
-        if (error) throw error
-
-        if (data) {
-          setTvStage("loading")
-          setCurrentSong(data)
-          setLoadingSong(true)
-        }
-      } catch (error) {
-        console.error("Recover playing error:", error)
-      }
-    }
-
-    recoverPlayingSong()
-  }, [
-    setCurrentSong,
-    setLoadingSong,
-    setTvStage,
-  ])
 
   useEffect(() => {
     async function playNextSong() {
@@ -60,22 +27,29 @@ function useTvQueue({
       try {
         setTvStage("loading")
         setLoadingSong(true)
+        setShowIntro(false)
 
         const { data, error } = await supabase
           .from("songs_queue")
           .update({ status: "playing" })
           .eq("id", next.id)
+          .eq("status", "pending")
           .select()
           .single()
 
         if (error) throw error
 
-        setCurrentSong(data)
-      } catch (error) {
-        console.error("Queue error:", error)
+        if (data) {
+          setCurrentSong(data)
+        }
 
-        setLoadingSong(false)
-        setTvStage("idle")
+        await loadTvState()
+
+      } catch (error) {
+        console.error("Queue play next error:", error)
+
+        await loadTvState()
+
       } finally {
         processingRef.current = false
       }
@@ -87,7 +61,9 @@ function useTvQueue({
     currentSong,
     setCurrentSong,
     setLoadingSong,
+    setShowIntro,
     setTvStage,
+    loadTvState,
   ])
 
   return {
