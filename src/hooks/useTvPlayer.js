@@ -11,77 +11,52 @@ function useTvPlayer({
 }) {
   const playerRef = useRef(null)
   const introTimerRef = useRef(null)
-  const soundTimerRef = useRef(null)
-  const hasStartedRef = useRef(false)
+  const retryTimerRef = useRef(null)
+
+  const screenPhaseRef = useRef("idle")
   const endingRef = useRef(false)
 
-  function safePlay() {
-    try {
-      playerRef.current?.playVideo()
-    } catch {}
+  function clearTimers() {
+    clearTimeout(introTimerRef.current)
+    clearTimeout(retryTimerRef.current)
   }
 
-  function forceSound() {
+  function forcePlay() {
     try {
+      playerRef.current?.playVideo()
       playerRef.current?.unMute()
       playerRef.current?.setVolume(100)
-      playerRef.current?.playVideo()
     } catch {}
-  }
-
-  function forcePlayWithSound() {
-    safePlay()
-
-    clearInterval(soundTimerRef.current)
-
-    let tries = 0
-
-    soundTimerRef.current = setInterval(() => {
-      tries++
-
-      forceSound()
-
-      if (tries >= 8) {
-        clearInterval(soundTimerRef.current)
-      }
-    }, 600)
-  }
-
-  function showIntroAfterStart() {
-    clearTimeout(introTimerRef.current)
-
-    setShowIntro(true)
-
-    introTimerRef.current = setTimeout(() => {
-      setShowIntro(false)
-    }, 2500)
   }
 
   function handleReady({ target }) {
     playerRef.current = target
-    hasStartedRef.current = false
+
     endingRef.current = false
+    screenPhaseRef.current = "loading"
 
     setLoadingSong(true)
     setShowIntro(false)
 
-    forcePlayWithSound()
+    forcePlay()
+
+    retryTimerRef.current = setTimeout(() => {
+      forcePlay()
+    }, 700)
   }
 
   async function finishSong() {
     if (endingRef.current) return
 
     endingRef.current = true
+    screenPhaseRef.current = "ended"
 
-    clearTimeout(introTimerRef.current)
-    clearInterval(soundTimerRef.current)
-
-    hasStartedRef.current = false
+    clearTimers()
 
     const finishedId = currentSong?.id
 
-    setShowIntro(false)
     setLoadingSong(false)
+    setShowIntro(false)
     setCurrentSong(null)
     playerRef.current = null
 
@@ -99,6 +74,7 @@ function useTvPlayer({
     }
 
     setTimeout(() => {
+      screenPhaseRef.current = "idle"
       endingRef.current = false
     }, 500)
   }
@@ -110,35 +86,47 @@ function useTvPlayer({
         break
 
       case 1:
-        setLoadingSong(false)
+        if (screenPhaseRef.current === "loading") {
+          screenPhaseRef.current = "intro"
 
-        if (!hasStartedRef.current) {
-          hasStartedRef.current = true
-          forceSound()
-          showIntroAfterStart()
+          setLoadingSong(false)
+          setShowIntro(true)
+
+          forcePlay()
+
+          clearTimeout(introTimerRef.current)
+
+          introTimerRef.current = setTimeout(() => {
+            screenPhaseRef.current = "playing"
+            setShowIntro(false)
+          }, 2500)
         }
 
         break
 
       case 2:
-        setTimeout(() => {
-          forcePlayWithSound()
-        }, 300)
+        retryTimerRef.current = setTimeout(() => {
+          forcePlay()
+        }, 400)
+
         break
 
       case 3:
-        if (!hasStartedRef.current) {
+        if (screenPhaseRef.current === "loading") {
           setLoadingSong(true)
         }
 
-        setTimeout(() => {
-          safePlay()
-        }, 700)
+        retryTimerRef.current = setTimeout(() => {
+          forcePlay()
+        }, 800)
 
         break
 
       case 5:
-        forcePlayWithSound()
+        if (screenPhaseRef.current === "loading") {
+          forcePlay()
+        }
+
         break
 
       default:
@@ -147,11 +135,10 @@ function useTvPlayer({
   }
 
   function handleError() {
-    clearTimeout(introTimerRef.current)
-    clearInterval(soundTimerRef.current)
+    clearTimers()
 
-    hasStartedRef.current = false
     endingRef.current = false
+    screenPhaseRef.current = "idle"
 
     setLoadingSong(false)
     setShowIntro(false)
