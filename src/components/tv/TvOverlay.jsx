@@ -63,12 +63,10 @@ function TvOverlay({
 
       {/* QR */}
       <div
-        className={`
+        className="
           absolute bottom-8 right-8
-          transition-all duration-700
-
-          
-        `}
+          animate-[qrFloatIn_1s_ease]
+        "
       >
         <TvQr qrUrl={qrUrl} />
       </div>
