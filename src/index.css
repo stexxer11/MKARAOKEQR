@@ -795,10 +795,16 @@
     width: 70vw;
   }
 }
+/* =========================================
+   TV SONG INTRO
+========================================= */
+
 @keyframes tvSongReveal {
 
   0% {
+
     opacity: 0;
+
     transform:
       scale(.92)
       translateY(30px);
@@ -807,7 +813,9 @@
   }
 
   100% {
+
     opacity: 1;
+
     transform:
       scale(1)
       translateY(0);
@@ -816,17 +824,118 @@
   }
 }
 
+.animate-tvSongReveal {
+
+  animation:
+    tvSongReveal .75s cubic-bezier(0.22,1,0.36,1);
+}
+
+/* =========================================
+   TV OVERLAY
+========================================= */
+
 @keyframes tvOverlayIn {
 
   0% {
+
     opacity: 0;
+
     transform:
       translateY(40px);
   }
 
   100% {
+
     opacity: 1;
+
     transform:
       translateY(0);
   }
+}
+
+.animate-tvOverlayIn {
+
+  animation:
+    tvOverlayIn .55s ease-out;
+}
+
+/* =========================================
+   TV QR FLOAT
+========================================= */
+
+@keyframes tvQrFloat {
+
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-tvQr {
+
+  animation:
+    tvQrFloat 4s ease-in-out infinite;
+}
+
+/* =========================================
+   TV BACKGROUND GLOW
+========================================= */
+
+@keyframes tvAmbientGlow {
+
+  0% {
+    opacity: .18;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: .28;
+    transform: scale(1.04);
+  }
+
+  100% {
+    opacity: .18;
+    transform: scale(1);
+  }
+}
+
+.animate-tvGlow {
+
+  animation:
+    tvAmbientGlow 8s ease-in-out infinite;
+}
+
+/* =========================================
+   TV IDLE LOGO
+========================================= */
+
+@keyframes tvLogoIdle {
+
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+
+  50% {
+    transform: scale(1.025);
+    filter: brightness(1.18);
+  }
+
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+.animate-tvLogo {
+
+  animation:
+    tvLogoIdle 5s ease-in-out infinite;
 }
