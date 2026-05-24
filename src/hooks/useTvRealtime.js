@@ -37,17 +37,22 @@ function useTvRealtime({
           const row = newRow
           if (!row) return
 
-          if (row.status === "playing") {
-            setCurrentSong(row)
-            setLoadingSong(true)
-            setShowIntro(false)
+        if (row.status === "playing") {
 
-            setQueue(prev =>
-              prev.filter(song => song.id !== row.id)
-            )
+  // evitar resetear la canción
+  setCurrentSong(prev => prev || row)
 
-            return
-          }
+  // sacar de cola
+  setQueue(prev =>
+    prev.filter(song => song.id !== row.id)
+  )
+
+  // NO activar loading aquí
+  // porque vuelve a mostrar
+  // "Cargando canción..."
+
+  return
+}
 
           if (row.status === "pending") {
             setQueue(prev => {
