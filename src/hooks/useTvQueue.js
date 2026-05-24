@@ -8,6 +8,50 @@ function useTvQueue({
   setLoadingSong,
 }) {
   const processingRef = useRef(false)
+  const recoveredRef = useRef(false)
+
+  // =========================
+  // RECUPERAR CANCIÓN ACTUAL
+  // =========================
+
+  useEffect(() => {
+
+    async function recoverPlayingSong() {
+      if (recoveredRef.current) return
+
+      recoveredRef.current = true
+
+      try {
+        const { data, error } = await supabase
+          .from("songs_queue")
+          .select("*")
+          .eq("status", "playing")
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle()
+
+        if (error) throw error
+
+        if (data) {
+          setCurrentSong(data)
+          setLoadingSong(true)
+        }
+
+      } catch (error) {
+        console.error("Recover playing error:", error)
+      }
+    }
+
+    recoverPlayingSong()
+
+  }, [
+    setCurrentSong,
+    setLoadingSong,
+  ])
+
+  // =========================
+  // REPRODUCIR SIGUIENTE
+  // =========================
 
   useEffect(() => {
 
@@ -25,14 +69,16 @@ function useTvQueue({
       try {
         setLoadingSong(true)
 
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("songs_queue")
           .update({ status: "playing" })
           .eq("id", next.id)
+          .select()
+          .single()
 
         if (error) throw error
 
-        setCurrentSong(prev => prev || next)
+        setCurrentSong(prev => prev || data)
 
       } catch (error) {
         console.error("Queue error:", error)
