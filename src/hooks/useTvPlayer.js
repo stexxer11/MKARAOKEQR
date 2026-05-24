@@ -5,8 +5,10 @@ function useTvPlayer({
   currentSong,
   setLoadingSong,
   setCurrentSong,
+  setShowIntro,
 }) {
   const playerRef = useRef(null)
+  const introTimerRef = useRef(null)
 
   function safePlay() {
     try {
@@ -16,10 +18,19 @@ function useTvPlayer({
     } catch {}
   }
 
+  function showSongIntro() {
+    setShowIntro(true)
+
+    clearTimeout(introTimerRef.current)
+
+    introTimerRef.current = setTimeout(() => {
+      setShowIntro(false)
+    }, 3500)
+  }
+
   function handleReady({ target }) {
     playerRef.current = target
     safePlay()
-    setLoadingSong(false)
   }
 
   async function handleStateChange({ data }) {
@@ -27,6 +38,8 @@ function useTvPlayer({
 
       // ENDED
       case 0:
+        clearTimeout(introTimerRef.current)
+
         if (currentSong?.id) {
           await supabase
             .from("songs_queue")
@@ -34,6 +47,8 @@ function useTvPlayer({
             .eq("id", currentSong.id)
         }
 
+        setShowIntro(false)
+        setLoadingSong(false)
         setCurrentSong(null)
         break
 
@@ -41,6 +56,7 @@ function useTvPlayer({
       case 1:
         safePlay()
         setLoadingSong(false)
+        showSongIntro()
         break
 
       // PAUSED
@@ -54,7 +70,10 @@ function useTvPlayer({
   }
 
   function handleError() {
+    clearTimeout(introTimerRef.current)
+
     setLoadingSong(false)
+    setShowIntro(false)
     setCurrentSong(null)
   }
 

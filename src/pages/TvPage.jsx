@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import supabase from "../services/supabase"
 
 import TvPlayer from "../components/tv/TvPlayer"
@@ -6,9 +6,10 @@ import TvIntro from "../components/tv/TvIntro"
 import TvLoading from "../components/tv/TvLoading"
 import TvOverlay from "../components/tv/TvOverlay"
 import TvIdle from "../components/tv/TvIdle"
-import TvQr from "../components/tv/TvQr"
 
 import useTvRealtime from "../hooks/useTvRealtime"
+import useTvQueue from "../hooks/useTvQueue"
+import useTvPlayer from "../hooks/useTvPlayer"
 
 function TvPage() {
 
@@ -18,13 +19,10 @@ function TvPage() {
   const [showIntro, setShowIntro] = useState(false)
   const [qrUrl, setQrUrl] = useState("")
 
-  const processingRef = useRef(false)
-
   useEffect(() => {
     setQrUrl(window.location.origin)
   }, [])
 
-  // LOAD INITIAL
   useEffect(() => {
 
     async function load() {
@@ -44,6 +42,8 @@ function TvPage() {
       setQueue(pending || [])
 
       if (playing) {
+        setLoadingSong(true)
+        setShowIntro(false)
         setCurrentSong(playing)
       }
     }
@@ -52,7 +52,6 @@ function TvPage() {
 
   }, [])
 
-  // REALTIME HOOK
   useTvRealtime({
     setQueue,
     setCurrentSong,
@@ -60,65 +59,50 @@ function TvPage() {
     setLoadingSong,
   })
 
-  // AUTO NEXT FIX
-  useEffect(() => {
+  useTvQueue({
+    queue,
+    currentSong,
+    setCurrentSong,
+    setLoadingSong,
+  })
 
-    if (processingRef.current) return
-    if (currentSong) return
-    if (queue.length === 0) return
-
-    const next = queue[0]
-
-    processingRef.current = true
-
-    supabase
-      .from("songs_queue")
-      .update({ status: "playing" })
-      .eq("id", next.id)
-      .then(() => {
-        processingRef.current = false
-      })
-
-  }, [queue, currentSong])
+  const {
+    handleReady,
+    handleStateChange,
+    handleError,
+  } = useTvPlayer({
+    currentSong,
+    setLoadingSong,
+    setCurrentSong,
+    setShowIntro,
+  })
 
   const idle = !currentSong
 
   return (
-
     <div className="w-screen h-screen bg-black overflow-hidden relative">
 
-      {/* PLAYER */}
       <TvPlayer
         currentSong={currentSong}
-        onReady={() => setLoadingSong(false)}
-        onStateChange={(e) => {
-          if (e.data === 0) {
-            supabase
-              .from("songs_queue")
-              .delete()
-              .eq("id", currentSong.id)
-              .then(() => setCurrentSong(null))
-          }
-        }}
-        onError={() => setCurrentSong(null)}
+        onReady={handleReady}
+        onStateChange={handleStateChange}
+        onError={handleError}
       />
 
-      {/* LOADING */}
       {loadingSong && <TvLoading />}
 
-      {/* INTRO */}
-      {showIntro && <TvIntro currentSong={currentSong} />}
+      {showIntro && currentSong && (
+        <TvIntro currentSong={currentSong} />
+      )}
 
-      {/* OVERLAY */}
-      {!showIntro && currentSong && (
+      {!showIntro && currentSong && !loadingSong && (
         <TvOverlay
           currentSong={currentSong}
           qrUrl={qrUrl}
         />
       )}
 
-      {/* IDLE */}
-      {idle && (
+      {idle && !loadingSong && (
         <TvIdle
           qrUrl={qrUrl}
           queue={queue}

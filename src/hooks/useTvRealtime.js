@@ -35,8 +35,13 @@ function useTvRealtime({
               )
 
               setCurrentSong(prev =>
-                prev?.id === oldRow.id ? null : prev
+                prev?.id === oldRow.id
+                  ? null
+                  : prev
               )
+
+              setShowIntro(false)
+              setLoadingSong(false)
             }
 
             return
@@ -49,16 +54,12 @@ function useTvRealtime({
           if (row.status === "playing") {
 
             setLoadingSong(true)
-            setShowIntro(true)
+            setShowIntro(false)
             setCurrentSong(row)
 
             setQueue(prev =>
               prev.filter(s => s.id !== row.id)
             )
-
-            setTimeout(() => {
-              setShowIntro(false)
-            }, 4500)
 
             return
           }
@@ -71,7 +72,11 @@ function useTvRealtime({
 
               if (exists) {
                 return prev
-                  .map(s => s.id === row.id ? row : s)
+                  .map(s =>
+                    s.id === row.id
+                      ? row
+                      : s
+                  )
                   .sort(
                     (a, b) =>
                       new Date(a.created_at) -
@@ -87,7 +92,9 @@ function useTvRealtime({
             })
 
             setCurrentSong(prev =>
-              prev?.id === row.id ? null : prev
+              prev?.id === row.id
+                ? null
+                : prev
             )
           }
         }
