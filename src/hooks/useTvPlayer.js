@@ -3,12 +3,13 @@ import supabase from "../services/supabase"
 
 function useTvPlayer({
   currentSong,
-  setLoadingSong,
   setCurrentSong,
+  setLoadingSong,
   setShowIntro,
 }) {
   const playerRef = useRef(null)
   const introTimerRef = useRef(null)
+  const hasStartedRef = useRef(false)
 
   function safePlay() {
     try {
@@ -18,10 +19,10 @@ function useTvPlayer({
     } catch {}
   }
 
-  function showSongIntro() {
-    setShowIntro(true)
-
+  function showIntroAfterStart() {
     clearTimeout(introTimerRef.current)
+
+    setShowIntro(true)
 
     introTimerRef.current = setTimeout(() => {
       setShowIntro(false)
@@ -30,15 +31,15 @@ function useTvPlayer({
 
   function handleReady({ target }) {
     playerRef.current = target
+    hasStartedRef.current = false
     safePlay()
   }
 
   async function handleStateChange({ data }) {
     switch (data) {
-
-      // ENDED
       case 0:
         clearTimeout(introTimerRef.current)
+        hasStartedRef.current = false
 
         if (currentSong?.id) {
           await supabase
@@ -47,19 +48,22 @@ function useTvPlayer({
             .eq("id", currentSong.id)
         }
 
-        setShowIntro(false)
         setLoadingSong(false)
+        setShowIntro(false)
         setCurrentSong(null)
         break
 
-      // PLAYING
       case 1:
         safePlay()
-        setLoadingSong(false)
-        showSongIntro()
+
+        if (!hasStartedRef.current) {
+          hasStartedRef.current = true
+          setLoadingSong(false)
+          showIntroAfterStart()
+        }
+
         break
 
-      // PAUSED
       case 2:
         setTimeout(safePlay, 200)
         break
@@ -71,6 +75,7 @@ function useTvPlayer({
 
   function handleError() {
     clearTimeout(introTimerRef.current)
+    hasStartedRef.current = false
 
     setLoadingSong(false)
     setShowIntro(false)
@@ -78,7 +83,6 @@ function useTvPlayer({
   }
 
   return {
-    playerRef,
     handleReady,
     handleStateChange,
     handleError,

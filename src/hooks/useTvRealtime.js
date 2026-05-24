@@ -4,12 +4,10 @@ import supabase from "../services/supabase"
 function useTvRealtime({
   setQueue,
   setCurrentSong,
-  setShowIntro,
   setLoadingSong,
+  setShowIntro,
 }) {
-
   useEffect(() => {
-
     const channel = supabase
       .channel("tv-live")
       .on(
@@ -20,82 +18,51 @@ function useTvRealtime({
           table: "songs_queue",
         },
         (payload) => {
-
-          const {
-            eventType,
-            new: newRow,
-            old: oldRow,
-          } = payload
+          const { eventType, new: newRow, old: oldRow } = payload
 
           if (eventType === "DELETE") {
+            setQueue(prev =>
+              prev.filter(song => song.id !== oldRow?.id)
+            )
 
-            if (oldRow?.id) {
-              setQueue(prev =>
-                prev.filter(s => s.id !== oldRow.id)
-              )
+            setCurrentSong(prev =>
+              prev?.id === oldRow?.id ? null : prev
+            )
 
-              setCurrentSong(prev =>
-                prev?.id === oldRow.id
-                  ? null
-                  : prev
-              )
-
-              setShowIntro(false)
-              setLoadingSong(false)
-            }
-
+            setLoadingSong(false)
+            setShowIntro(false)
             return
           }
 
           const row = newRow
-
           if (!row) return
 
           if (row.status === "playing") {
-
+            setCurrentSong(row)
             setLoadingSong(true)
             setShowIntro(false)
-            setCurrentSong(row)
 
             setQueue(prev =>
-              prev.filter(s => s.id !== row.id)
+              prev.filter(song => song.id !== row.id)
             )
 
             return
           }
 
           if (row.status === "pending") {
-
             setQueue(prev => {
+              const exists = prev.some(song => song.id === row.id)
 
-              const exists = prev.some(s => s.id === row.id)
+              const nextQueue = exists
+                ? prev.map(song => song.id === row.id ? row : song)
+                : [...prev, row]
 
-              if (exists) {
-                return prev
-                  .map(s =>
-                    s.id === row.id
-                      ? row
-                      : s
-                  )
-                  .sort(
-                    (a, b) =>
-                      new Date(a.created_at) -
-                      new Date(b.created_at)
-                  )
-              }
-
-              return [...prev, row].sort(
+              return nextQueue.sort(
                 (a, b) =>
                   new Date(a.created_at) -
                   new Date(b.created_at)
               )
             })
-
-            setCurrentSong(prev =>
-              prev?.id === row.id
-                ? null
-                : prev
-            )
           }
         }
       )
@@ -104,12 +71,11 @@ function useTvRealtime({
     return () => {
       supabase.removeChannel(channel)
     }
-
   }, [
     setQueue,
     setCurrentSong,
-    setShowIntro,
     setLoadingSong,
+    setShowIntro,
   ])
 }
 
