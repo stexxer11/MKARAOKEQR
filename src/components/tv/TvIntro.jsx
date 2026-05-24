@@ -1,53 +1,28 @@
-// src/components/tv/TvIntro.jsx
-
 function TvIntro({ currentSong }) {
-  return (
-    <div
-      className="
-        absolute inset-0 z-40
-        flex items-center justify-center
-        bg-black/70 backdrop-blur-md
-        animate-[tvIntroFadeIn_0.8s_ease]
-      "
-    >
-      <div
-        className="
-          text-center px-8
-          animate-[tvIntroFloat_3s_ease-in-out_infinite]
-        "
-      >
-        <div
-          className="
-            w-44 h-44 mx-auto mb-8
-            rounded-full
-            bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600
-            p-1
-            shadow-[0_0_70px_rgba(34,211,238,0.55)]
-          "
-        >
-          <div
-            className="
-              w-full h-full rounded-full bg-black
-              flex items-center justify-center
-              text-6xl font-black text-white
-            "
-          >
-            {(currentSong?.artist_name || "A").charAt(0).toUpperCase()}
-          </div>
-        </div>
 
-        <p className="text-cyan-300 text-xl font-bold tracking-[0.4em] mb-4">
-          EN EL ESCENARIO
+  if (!currentSong) return null
+
+  return (
+    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/90 backdrop-blur-xl">
+
+      <div className="text-center animate-[fadeIn_0.8s_ease]">
+
+        <p className="text-cyan-300 text-3xl font-bold tracking-[0.4em] uppercase mb-8">
+          Próximo cantante
         </p>
 
-        <h1 className="text-6xl font-black text-white">
-          {currentSong?.artist_name || "Artista"}
+        <h1 className="text-8xl font-black text-white drop-shadow-[0_0_40px_rgba(34,211,238,0.8)]">
+          {currentSong.artist_name || "Invitado"}
         </h1>
 
-        <p className="text-zinc-300 text-2xl mt-5 max-w-4xl">
-          {currentSong?.title}
-        </p>
+        <div className="mt-10 h-1 w-96 mx-auto bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 rounded-full" />
+
+        <h2 className="mt-10 text-4xl text-white/80 font-semibold max-w-5xl mx-auto">
+          {currentSong.title}
+        </h2>
+
       </div>
+
     </div>
   )
 }
