@@ -4,21 +4,44 @@ function TvQr({ qrUrl, large = false }) {
 
   if (!qrUrl) return null
 
+  const size = large ? 260 : 150
+
   return (
+
     <div
       className={`
-        bg-white p-4 rounded-3xl shadow-2xl
+        bg-white
+        rounded-3xl
+        overflow-hidden
+        shadow-2xl
+
         ${large ? "scale-125" : ""}
       `}
+      style={{
+        width: size,
+        height: size,
+      }}
     >
+
       <QRCodeCanvas
         value={qrUrl}
-        size={large ? 220 : 130}
+
+        size={size}
+
         bgColor="#ffffff"
         fgColor="#000000"
+
         level="H"
-        includeMargin
+
+        includeMargin={false}
+
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "block",
+        }}
       />
+
     </div>
   )
 }
