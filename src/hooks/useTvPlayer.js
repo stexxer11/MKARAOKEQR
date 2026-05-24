@@ -13,9 +13,15 @@ function useTvPlayer({
 
   function safePlay() {
     try {
+      playerRef.current?.mute()
+      playerRef.current?.playVideo()
+    } catch {}
+  }
+
+  function enableSound() {
+    try {
       playerRef.current?.unMute()
       playerRef.current?.setVolume(100)
-      playerRef.current?.playVideo()
     } catch {}
   }
 
@@ -32,7 +38,12 @@ function useTvPlayer({
   function handleReady({ target }) {
     playerRef.current = target
     hasStartedRef.current = false
+
     safePlay()
+
+    setTimeout(() => {
+      enableSound()
+    }, 1500)
   }
 
   async function handleStateChange({ data }) {
@@ -54,18 +65,23 @@ function useTvPlayer({
         break
 
       case 1:
-        safePlay()
-
         if (!hasStartedRef.current) {
           hasStartedRef.current = true
           setLoadingSong(false)
           showIntroAfterStart()
+
+          setTimeout(() => {
+            enableSound()
+          }, 1000)
         }
 
         break
 
       case 2:
-        setTimeout(safePlay, 200)
+        setTimeout(() => {
+          safePlay()
+          enableSound()
+        }, 300)
         break
 
       default:
