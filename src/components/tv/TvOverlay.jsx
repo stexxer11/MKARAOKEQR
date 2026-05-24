@@ -1,26 +1,6 @@
-import { useEffect, useState } from "react"
 import TvQr from "./TvQr"
 
-function TvOverlay({
-  currentSong,
-  qrUrl,
-}) {
-
-  const [visible, setVisible] = useState(true)
-
-  useEffect(() => {
-
-    if (!currentSong) return
-
-    setVisible(true)
-
-    const timer = setTimeout(() => {
-      setVisible(false)
-    }, 5000)
-
-    return () => clearTimeout(timer)
-
-  }, [currentSong])
+function TvOverlay({ currentSong, qrUrl }) {
 
   if (!currentSong) return null
 
@@ -29,7 +9,7 @@ function TvOverlay({
 
       {/* INFO CANCIÓN */}
       <div
-        className={`
+        className="
           absolute bottom-8 left-8
           max-w-4xl
           px-8 py-6
@@ -37,16 +17,9 @@ function TvOverlay({
           bg-black/65 backdrop-blur-xl
           border border-white/10
           shadow-2xl
-          transition-all duration-700
-
-          ${
-            visible
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-8"
-          }
-        `}
+          animate-[songInfoIn_0.8s_ease_forwards]
+        "
       >
-
         <p className="text-cyan-300 text-sm font-black tracking-[0.35em] uppercase">
           Cantando ahora
         </p>
@@ -58,22 +31,10 @@ function TvOverlay({
         <p className="mt-3 text-2xl text-white/80 line-clamp-2">
           {currentSong.title}
         </p>
-
       </div>
 
-      {/* QR */}
-      <div
-        className={`
-          absolute bottom-8 right-8
-          transition-all duration-700
-
-          ${
-            visible
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-8"
-          }
-        `}
-      >
+      {/* QR ABAJO DERECHA */}
+      <div className="absolute bottom-8 right-8 animate-[qrIn_0.9s_ease_forwards]">
         <TvQr qrUrl={qrUrl} />
       </div>
 

@@ -6,7 +6,7 @@ import TvIntro from "../components/tv/TvIntro"
 import TvLoading from "../components/tv/TvLoading"
 import TvOverlay from "../components/tv/TvOverlay"
 import TvIdle from "../components/tv/TvIdle"
-import TvBackground from "../components/tv/TvBackground"
+
 
 import useTvRealtime from "../hooks/useTvRealtime"
 import useTvQueue from "../hooks/useTvQueue"
