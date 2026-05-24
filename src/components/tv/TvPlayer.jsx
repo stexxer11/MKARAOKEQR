@@ -6,12 +6,10 @@ function TvPlayer({
   onStateChange,
   onError,
 }) {
-
   if (!currentSong) return null
 
   return (
     <div className="absolute inset-0 z-0 bg-black">
-
       <YouTube
         key={currentSong.id}
         videoId={currentSong.youtube_id}
@@ -30,14 +28,12 @@ function TvPlayer({
             playsinline: 1,
             rel: 0,
             start: 0,
-            origin: window.location.origin,
           },
         }}
         onReady={onReady}
         onStateChange={onStateChange}
         onError={onError}
       />
-
     </div>
   )
 }
