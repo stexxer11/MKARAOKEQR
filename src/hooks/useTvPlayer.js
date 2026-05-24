@@ -1,5 +1,3 @@
-// src/hooks/useTvPlayer.js
-
 import { useRef } from "react"
 import supabase from "../services/supabase"
 
@@ -8,11 +6,11 @@ function useTvPlayer({
   setCurrentSong,
   setLoadingSong,
   setShowIntro,
+  setTvStage,
 }) {
   const playerRef = useRef(null)
 
   const introTimerRef = useRef(null)
-  const transitionTimerRef = useRef(null)
   const retryTimerRef = useRef(null)
 
   const screenPhaseRef = useRef("idle")
@@ -20,7 +18,6 @@ function useTvPlayer({
 
   function clearTimers() {
     clearTimeout(introTimerRef.current)
-    clearTimeout(transitionTimerRef.current)
     clearTimeout(retryTimerRef.current)
   }
 
@@ -38,6 +35,7 @@ function useTvPlayer({
     endingRef.current = false
     screenPhaseRef.current = "loading"
 
+    setTvStage("loading")
     setLoadingSong(true)
     setShowIntro(false)
 
@@ -61,6 +59,8 @@ function useTvPlayer({
     setLoadingSong(false)
     setShowIntro(false)
     setCurrentSong(null)
+    setTvStage("idle")
+
     playerRef.current = null
 
     if (finishedId) {
@@ -94,19 +94,17 @@ function useTvPlayer({
 
           setLoadingSong(false)
           setShowIntro(true)
+          setTvStage("intro")
 
           forcePlay()
 
           clearTimeout(introTimerRef.current)
 
           introTimerRef.current = setTimeout(() => {
-            screenPhaseRef.current = "transition"
+            screenPhaseRef.current = "playing"
 
-            transitionTimerRef.current = setTimeout(() => {
-              screenPhaseRef.current = "playing"
-              setShowIntro(false)
-            }, 1200)
-
+            setShowIntro(false)
+            setTvStage("playing")
           }, 3500)
         }
 
@@ -122,6 +120,7 @@ function useTvPlayer({
       case 3:
         if (screenPhaseRef.current === "loading") {
           setLoadingSong(true)
+          setTvStage("loading")
         }
 
         retryTimerRef.current = setTimeout(() => {
@@ -151,6 +150,8 @@ function useTvPlayer({
     setLoadingSong(false)
     setShowIntro(false)
     setCurrentSong(null)
+    setTvStage("idle")
+
     playerRef.current = null
   }
 

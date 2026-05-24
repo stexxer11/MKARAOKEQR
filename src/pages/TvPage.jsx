@@ -14,8 +14,11 @@ import useTvPlayer from "../hooks/useTvPlayer"
 function TvPage() {
   const [queue, setQueue] = useState([])
   const [currentSong, setCurrentSong] = useState(null)
+
   const [loadingSong, setLoadingSong] = useState(false)
   const [showIntro, setShowIntro] = useState(false)
+
+  const [tvStage, setTvStage] = useState("idle")
   const [qrUrl, setQrUrl] = useState("")
 
   useEffect(() => {
@@ -39,9 +42,12 @@ function TvPage() {
       setQueue(pending || [])
 
       if (playing) {
+        setTvStage("loading")
         setCurrentSong(playing)
         setLoadingSong(true)
         setShowIntro(false)
+      } else {
+        setTvStage("idle")
       }
     }
 
@@ -53,6 +59,7 @@ function TvPage() {
     setCurrentSong,
     setLoadingSong,
     setShowIntro,
+    setTvStage,
   })
 
   useTvQueue({
@@ -60,6 +67,7 @@ function TvPage() {
     currentSong,
     setCurrentSong,
     setLoadingSong,
+    setTvStage,
   })
 
   const {
@@ -71,6 +79,7 @@ function TvPage() {
     setCurrentSong,
     setLoadingSong,
     setShowIntro,
+    setTvStage,
   })
 
   return (
@@ -83,20 +92,20 @@ function TvPage() {
         onError={handleError}
       />
 
-      {loadingSong && <TvLoading />}
+      {tvStage === "loading" && <TvLoading />}
 
-      {showIntro && currentSong && (
+      {tvStage === "intro" && currentSong && (
         <TvIntro currentSong={currentSong} />
       )}
 
-      {!loadingSong && !showIntro && currentSong && (
+      {tvStage === "playing" && currentSong && (
         <TvOverlay
           currentSong={currentSong}
           qrUrl={qrUrl}
         />
       )}
 
-      {!currentSong && !loadingSong && (
+      {tvStage === "idle" && !currentSong && (
         <TvIdle
           qrUrl={qrUrl}
           queue={queue}

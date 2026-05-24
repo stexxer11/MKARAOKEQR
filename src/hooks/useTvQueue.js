@@ -1,5 +1,3 @@
-// src/hooks/useTvQueue.js
-
 import { useEffect, useRef } from "react"
 import supabase from "../services/supabase"
 
@@ -8,6 +6,7 @@ function useTvQueue({
   currentSong,
   setCurrentSong,
   setLoadingSong,
+  setTvStage,
 }) {
   const processingRef = useRef(false)
   const recoveredRef = useRef(false)
@@ -30,6 +29,7 @@ function useTvQueue({
         if (error) throw error
 
         if (data) {
+          setTvStage("loading")
           setCurrentSong(data)
           setLoadingSong(true)
         }
@@ -39,7 +39,11 @@ function useTvQueue({
     }
 
     recoverPlayingSong()
-  }, [setCurrentSong, setLoadingSong])
+  }, [
+    setCurrentSong,
+    setLoadingSong,
+    setTvStage,
+  ])
 
   useEffect(() => {
     async function playNextSong() {
@@ -54,6 +58,7 @@ function useTvQueue({
       processingRef.current = true
 
       try {
+        setTvStage("loading")
         setLoadingSong(true)
 
         const { data, error } = await supabase
@@ -68,7 +73,9 @@ function useTvQueue({
         setCurrentSong(data)
       } catch (error) {
         console.error("Queue error:", error)
+
         setLoadingSong(false)
+        setTvStage("idle")
       } finally {
         processingRef.current = false
       }
@@ -80,6 +87,7 @@ function useTvQueue({
     currentSong,
     setCurrentSong,
     setLoadingSong,
+    setTvStage,
   ])
 
   return {
