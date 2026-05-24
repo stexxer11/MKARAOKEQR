@@ -13,6 +13,7 @@ import useTvQueue from "../hooks/useTvQueue"
 import useTvPlayer from "../hooks/useTvPlayer"
 
 function TvPage() {
+
   const [queue, setQueue] = useState([])
   const [currentSong, setCurrentSong] = useState(null)
   const [loadingSong, setLoadingSong] = useState(false)
@@ -25,12 +26,13 @@ function TvPage() {
 
   // INITIAL LOAD
   useEffect(() => {
+
     async function load() {
+
       const { data: playing } = await supabase
         .from("songs_queue")
         .select("*")
         .eq("status", "playing")
-        .limit(1)
         .maybeSingle()
 
       const { data: pending } = await supabase
@@ -40,10 +42,12 @@ function TvPage() {
         .order("created_at", { ascending: true })
 
       setQueue(pending || [])
+
       if (playing) setCurrentSong(playing)
     }
 
     load()
+
   }, [])
 
   // REALTIME
@@ -62,16 +66,19 @@ function TvPage() {
   })
 
   // PLAYER CONTROL
-  const { handleReady, handleStateChange, handleError } = useTvPlayer({
+  const {
+    handleReady,
+    handleStateChange,
+    handleError,
+  } = useTvPlayer({
     setLoadingSong,
     setCurrentSong,
   })
 
-  // ✅ FIX PRINCIPAL
-  const idle = !currentSong && !loadingSong && !showIntro
-  const showOverlay = !!currentSong && !showIntro
+  const idle = !currentSong
 
   return (
+
     <div className="w-screen h-screen relative overflow-hidden bg-black">
 
       {/* BACKGROUND */}
@@ -89,10 +96,12 @@ function TvPage() {
       {loadingSong && <TvLoading />}
 
       {/* INTRO */}
-      {showIntro && <TvIntro currentSong={currentSong} />}
+      {showIntro && (
+        <TvIntro currentSong={currentSong} />
+      )}
 
       {/* OVERLAY */}
-      {showOverlay && (
+      {!showIntro && currentSong && (
         <TvOverlay
           currentSong={currentSong}
           qrUrl={qrUrl}
