@@ -21,13 +21,11 @@ function TvPlayer({
         className="
           absolute inset-0
           w-full h-full
-          pointer-events-none
         "
 
         iframeClassName="
           absolute inset-0
           w-full h-full
-          pointer-events-none
         "
 
         opts={{
@@ -54,7 +52,6 @@ function TvPlayer({
 
             origin: "https://mkaraokeqr.vercel.app",
 
-            // IMPORTANTE
             widget_referrer:
               "https://mkaraokeqr.vercel.app",
           },
