@@ -6,6 +6,7 @@ function useTvPlayer({
   setLoadingSong,
   setCurrentSong,
   setShowIntro,
+  setVideoReady,
 }) {
 
   const playerRef = useRef(null)
@@ -18,40 +19,58 @@ function useTvPlayer({
       e.target.unMute()
       e.target.setVolume(100)
       e.target.playVideo()
-    } catch (err) {}
-
-    setLoadingSong(false)
-    setShowIntro(true)
-
-    setTimeout(() => {
-      setShowIntro(false)
-    }, 2800)
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   const handleStateChange = async (e) => {
 
-    if (e.data === 0) {
-
-      if (!currentSong?.id) return
-
-      await supabase
-        .from("songs_queue")
-        .delete()
-        .eq("id", currentSong.id)
-
-      setCurrentSong(null)
-      setShowIntro(false)
-      setLoadingSong(false)
-    }
+    // =====================
+    // PLAYING REAL
+    // =====================
 
     if (e.data === 1) {
+
       try {
         playerRef.current?.unMute()
         playerRef.current?.setVolume(100)
       } catch (err) {}
+
+      setVideoReady(true)
+      setLoadingSong(false)
+      setShowIntro(true)
+
+      setTimeout(() => {
+        setShowIntro(false)
+      }, 2800)
     }
 
+    // =====================
+    // ENDED
+    // =====================
+
+    if (e.data === 0) {
+
+      if (currentSong?.id) {
+        await supabase
+          .from("songs_queue")
+          .delete()
+          .eq("id", currentSong.id)
+      }
+
+      setVideoReady(false)
+      setShowIntro(false)
+      setLoadingSong(false)
+      setCurrentSong(null)
+    }
+
+    // =====================
+    // PAUSED
+    // =====================
+
     if (e.data === 2) {
+
       setTimeout(() => {
         try {
           playerRef.current?.playVideo()
@@ -69,9 +88,10 @@ function useTvPlayer({
         .eq("id", currentSong.id)
     }
 
-    setCurrentSong(null)
+    setVideoReady(false)
     setShowIntro(false)
     setLoadingSong(false)
+    setCurrentSong(null)
   }
 
   return {

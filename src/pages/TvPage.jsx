@@ -18,15 +18,31 @@ function TvPage() {
   const [currentSong, setCurrentSong] = useState(null)
   const [loadingSong, setLoadingSong] = useState(false)
   const [showIntro, setShowIntro] = useState(false)
+  const [videoReady, setVideoReady] = useState(false)
   const [qrUrl, setQrUrl] = useState("")
-
-  // =====================
-  // QR URL
-  // =====================
 
   useEffect(() => {
     setQrUrl(window.location.origin)
   }, [])
+
+  // =====================
+  // RESET WHEN SONG CHANGES
+  // =====================
+
+  useEffect(() => {
+
+    if (!currentSong) {
+      setVideoReady(false)
+      setLoadingSong(false)
+      setShowIntro(false)
+      return
+    }
+
+    setVideoReady(false)
+    setLoadingSong(true)
+    setShowIntro(false)
+
+  }, [currentSong?.id])
 
   // =====================
   // INITIAL LOAD
@@ -52,6 +68,8 @@ function TvPage() {
 
       if (playing) {
         setCurrentSong(playing)
+        setLoadingSong(true)
+        setVideoReady(false)
       }
     }
 
@@ -93,11 +111,8 @@ function TvPage() {
     setLoadingSong,
     setCurrentSong,
     setShowIntro,
+    setVideoReady,
   })
-
-  // =====================
-  // SCREEN STATES
-  // =====================
 
   const idle = !currentSong
 
@@ -105,40 +120,36 @@ function TvPage() {
 
     <div className="w-screen h-screen relative overflow-hidden bg-black">
 
-      {/* BACKGROUND */}
       <TvBackground idle={idle} />
 
-      {/* PLAYER OCULTO / VISIBLE */}
+      {/* YOUTUBE OCULTO HASTA QUE REALMENTE ESTÉ REPRODUCIENDO */}
       <TvPlayer
         currentSong={currentSong}
+        videoReady={videoReady}
         onReady={handleReady}
         onStateChange={handleStateChange}
         onError={handleError}
       />
 
-      {/* LOADER DJ MIENTRAS YOUTUBE CARGA */}
-      {loadingSong && currentSong && (
-        <TvDjLoader
-          currentSong={currentSong}
-        />
+      {/* LOADER DJ MIENTRAS EL VIDEO NO ESTÁ LISTO */}
+      {currentSong && !videoReady && loadingSong && (
+        <TvDjLoader currentSong={currentSong} />
       )}
 
-      {/* INTRO CUANDO YA ESTÁ LISTA LA CANCIÓN */}
-      {showIntro && currentSong && (
-        <TvIntro
-          currentSong={currentSong}
-        />
+      {/* INTRO CUANDO YA ESTÁ REPRODUCIENDO */}
+      {currentSong && videoReady && showIntro && (
+        <TvIntro currentSong={currentSong} />
       )}
 
-      {/* OVERLAY DE CANCIÓN */}
-      {!loadingSong && !showIntro && currentSong && (
+      {/* OVERLAY SOLO CUANDO YA ESTÁ TODO LISTO */}
+      {currentSong && videoReady && !showIntro && (
         <TvOverlay
           currentSong={currentSong}
           qrUrl={qrUrl}
         />
       )}
 
-      {/* PANTALLA IDLE */}
+      {/* IDLE */}
       {idle && (
         <TvIdle
           qrUrl={qrUrl}
