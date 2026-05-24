@@ -1,4 +1,5 @@
-import { useRef } from "react"
+// src/hooks/useTvPlayer.js
+
 import supabase from "../services/supabase"
 
 function useTvPlayer({
@@ -7,79 +8,31 @@ function useTvPlayer({
   setLoadingSong,
   setShowIntro,
 }) {
-  const playerRef = useRef(null)
-  const introTimerRef = useRef(null)
-  const hasStartedRef = useRef(false)
 
-  function safePlay() {
-    try {
-      playerRef.current?.unMute()
-      playerRef.current?.setVolume(100)
-      playerRef.current?.playVideo()
-    } catch {}
+  function handleReady(event) {
+    event.target.playVideo()
   }
 
-  function showIntroAfterStart() {
-    clearTimeout(introTimerRef.current)
+  async function handleStateChange(event) {
 
-    setShowIntro(true)
+    // 0 = ended
+    if (event.data === 0 && currentSong) {
 
-    introTimerRef.current = setTimeout(() => {
+      await supabase
+        .from("songs_queue")
+        .delete()
+        .eq("id", currentSong.id)
+
+      setCurrentSong(null)
+      setLoadingSong(false)
       setShowIntro(false)
-    }, 3500)
-  }
-
-  function handleReady({ target }) {
-    playerRef.current = target
-    hasStartedRef.current = false
-    safePlay()
-  }
-
-  async function handleStateChange({ data }) {
-    switch (data) {
-      case 0:
-        clearTimeout(introTimerRef.current)
-        hasStartedRef.current = false
-
-        if (currentSong?.id) {
-          await supabase
-            .from("songs_queue")
-            .delete()
-            .eq("id", currentSong.id)
-        }
-
-        setLoadingSong(false)
-        setShowIntro(false)
-        setCurrentSong(null)
-        break
-
-      case 1:
-        safePlay()
-
-        if (!hasStartedRef.current) {
-          hasStartedRef.current = true
-          setLoadingSong(false)
-          showIntroAfterStart()
-        }
-
-        break
-
-      case 2:
-        setTimeout(safePlay, 200)
-        break
-
-      default:
-        break
     }
   }
 
   function handleError() {
-    clearTimeout(introTimerRef.current)
-    hasStartedRef.current = false
-
+    setCurrentSong(null)
     setLoadingSong(false)
     setShowIntro(false)
-    setCurrentSong(null)
   }
 
   return {

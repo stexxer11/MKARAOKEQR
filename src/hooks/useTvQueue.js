@@ -1,105 +1,37 @@
-import { useEffect, useRef } from "react"
+// src/hooks/useTvQueue.js
+
+import { useEffect } from "react"
 import supabase from "../services/supabase"
 
 function useTvQueue({
   queue,
   currentSong,
   setCurrentSong,
-  setLoadingSong,
 }) {
-  const processingRef = useRef(false)
-  const recoveredRef = useRef(false)
-
-  // =========================
-  // RECUPERAR CANCIÓN ACTUAL
-  // =========================
 
   useEffect(() => {
 
-    async function recoverPlayingSong() {
-      if (recoveredRef.current) return
+    async function nextSong() {
 
-      recoveredRef.current = true
-
-      try {
-        const { data, error } = await supabase
-          .from("songs_queue")
-          .select("*")
-          .eq("status", "playing")
-          .order("created_at", { ascending: true })
-          .limit(1)
-          .maybeSingle()
-
-        if (error) throw error
-
-        if (data) {
-          setCurrentSong(data)
-          setLoadingSong(true)
-        }
-
-      } catch (error) {
-        console.error("Recover playing error:", error)
-      }
-    }
-
-    recoverPlayingSong()
-
-  }, [
-    setCurrentSong,
-    setLoadingSong,
-  ])
-
-  // =========================
-  // REPRODUCIR SIGUIENTE
-  // =========================
-
-  useEffect(() => {
-
-    async function playNextSong() {
-      if (processingRef.current) return
       if (currentSong) return
-      if (!queue?.length) return
 
-      const next = queue[0]
+      if (queue.length === 0) return
 
-      if (!next?.id) return
+      const song = queue[0]
 
-      processingRef.current = true
+      await supabase
+        .from("songs_queue")
+        .update({
+          status: "playing",
+        })
+        .eq("id", song.id)
 
-      try {
-        setLoadingSong(true)
-
-        const { data, error } = await supabase
-          .from("songs_queue")
-          .update({ status: "playing" })
-          .eq("id", next.id)
-          .select()
-          .single()
-
-        if (error) throw error
-
-        setCurrentSong(prev => prev || data)
-
-      } catch (error) {
-        console.error("Queue error:", error)
-        setLoadingSong(false)
-      } finally {
-        processingRef.current = false
-      }
+      setCurrentSong(song)
     }
 
-    playNextSong()
+    nextSong()
 
-  }, [
-    queue,
-    currentSong,
-    setCurrentSong,
-    setLoadingSong,
-  ])
-
-  return {
-    processingRef,
-  }
+  }, [queue, currentSong])
 }
 
 export default useTvQueue
