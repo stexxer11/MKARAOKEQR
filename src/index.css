@@ -799,143 +799,28 @@
    TV SONG INTRO
 ========================================= */
 
-@keyframes tvSongReveal {
-
-  0% {
-
+@keyframes songInfoIn {
+  from {
     opacity: 0;
-
-    transform:
-      scale(.92)
-      translateY(30px);
-
-    filter: blur(20px);
+    transform: translateY(30px) scale(0.96);
+    filter: blur(12px);
   }
 
-  100% {
-
+  to {
     opacity: 1;
-
-    transform:
-      scale(1)
-      translateY(0);
-
-    filter: blur(0px);
+    transform: translateY(0) scale(1);
+    filter: blur(0);
   }
 }
 
-.animate-tvSongReveal {
-
-  animation:
-    tvSongReveal .75s cubic-bezier(0.22,1,0.36,1);
-}
-
-/* =========================================
-   TV OVERLAY
-========================================= */
-
-@keyframes tvOverlayIn {
-
-  0% {
-
+@keyframes qrIn {
+  from {
     opacity: 0;
-
-    transform:
-      translateY(40px);
+    transform: translateY(25px) scale(0.9);
   }
 
-  100% {
-
+  to {
     opacity: 1;
-
-    transform:
-      translateY(0);
+    transform: translateY(0) scale(1);
   }
-}
-
-.animate-tvOverlayIn {
-
-  animation:
-    tvOverlayIn .55s ease-out;
-}
-
-/* =========================================
-   TV QR FLOAT
-========================================= */
-
-@keyframes tvQrFloat {
-
-  0% {
-    transform: translateY(0px);
-  }
-
-  50% {
-    transform: translateY(-4px);
-  }
-
-  100% {
-    transform: translateY(0px);
-  }
-}
-
-.animate-tvQr {
-
-  animation:
-    tvQrFloat 4s ease-in-out infinite;
-}
-
-/* =========================================
-   TV BACKGROUND GLOW
-========================================= */
-
-@keyframes tvAmbientGlow {
-
-  0% {
-    opacity: .18;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: .28;
-    transform: scale(1.04);
-  }
-
-  100% {
-    opacity: .18;
-    transform: scale(1);
-  }
-}
-
-.animate-tvGlow {
-
-  animation:
-    tvAmbientGlow 8s ease-in-out infinite;
-}
-
-/* =========================================
-   TV IDLE LOGO
-========================================= */
-
-@keyframes tvLogoIdle {
-
-  0% {
-    transform: scale(1);
-    filter: brightness(1);
-  }
-
-  50% {
-    transform: scale(1.025);
-    filter: brightness(1.18);
-  }
-
-  100% {
-    transform: scale(1);
-    filter: brightness(1);
-  }
-}
-
-.animate-tvLogo {
-
-  animation:
-    tvLogoIdle 5s ease-in-out infinite;
 }
