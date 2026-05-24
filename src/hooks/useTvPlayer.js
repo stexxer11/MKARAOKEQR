@@ -10,7 +10,9 @@ function useTvPlayer({
   setShowIntro,
 }) {
   const playerRef = useRef(null)
+
   const introTimerRef = useRef(null)
+  const transitionTimerRef = useRef(null)
   const retryTimerRef = useRef(null)
 
   const screenPhaseRef = useRef("idle")
@@ -18,6 +20,7 @@ function useTvPlayer({
 
   function clearTimers() {
     clearTimeout(introTimerRef.current)
+    clearTimeout(transitionTimerRef.current)
     clearTimeout(retryTimerRef.current)
   }
 
@@ -97,9 +100,14 @@ function useTvPlayer({
           clearTimeout(introTimerRef.current)
 
           introTimerRef.current = setTimeout(() => {
-            screenPhaseRef.current = "playing"
-            setShowIntro(false)
-          }, 2500)
+            screenPhaseRef.current = "transition"
+
+            transitionTimerRef.current = setTimeout(() => {
+              screenPhaseRef.current = "playing"
+              setShowIntro(false)
+            }, 1200)
+
+          }, 3500)
         }
 
         break
